@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Product {
+  id            String           @id @default(cuid())
+  kodeUnik      String           @unique
+  nama          String
+  deskripsi     String?
+  hargaDasar    Int
+  fotoUtama     String
+
+  varian        ProductVariant[]
+
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  keywords    String?   @db.Text
+
+  @@index([kodeUnik])
+  @@index([nama])
+}
+
+model ProductVariant {
+  id            String    @id @default(cuid())
+  kodeVarian    String    @unique   
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  warna         String
+  ukuran        String
+  harga         Int
+  stok          Int       @default(0)
+  fotoVarian    String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([kodeVarian])
+  @@index([productId])
+}
+
+
+model Order {
+  id              String   @id @default(cuid())
+  orderId         String   @unique   // contoh: ORD-20260401-12345
+  namaPembeli     String
+  noHp            String
+  alamat          String
+  paymentMethod   String   // "cod" | "transfer"
+  paymentStatus   String   @default("pending") // pending | paid | failed
+  totalAmount     Int
+  items           Json     // simpan detail order (kodeVarian, nama, qty, harga)
+  whatsappSent    Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  isCompleted   Boolean  @default(false)
+  isCanceled    Boolean  @default(false)
+
+  midtransToken         String?
+  midtransRedirectUrl   String?
+  midtransTransactionId String?
+  midtransPaymentType   String?
+  midtransFraudStatus   String?
+  paidAt                DateTime?
+  expiredAt             DateTime?
+  cancelledAt           DateTime?
+
+  @@index([orderId])
+}
+// 1. Model untuk Banner Promo
+model Banner {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  createdAt DateTime @default(now())
+}
+
+// 2. Model untuk Kategori Produk
+model Category {
+  id       String    @id @default(cuid())
+  nama     String    @unique
+  icon     String?
+  products Product[] 
+}
+
+model SearchLog {
+  id        String   @id @default(cuid())
+  keyword   String   // Kata kunci yang diketik user
+  createdAt DateTime @default(now())
+}
