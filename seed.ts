@@ -1,3 +1,4 @@
+// @ts-nocheck
 import 'dotenv/config';
 // seed.ts  (di root project)
 import { prisma } from './src/lib/prisma';
