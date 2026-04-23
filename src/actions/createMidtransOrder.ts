@@ -96,7 +96,8 @@ export async function createMidtransOrder(data: {
       'bni_va',
       'bri_va',
       'permata_va',
-      'mandiri_va'
+      'mandiri_va',
+      'other_va'
     ],
     callbacks: {
       finish: `${appUrl}/checkout/success?orderId=${order.orderId}&from=snap_success`,
