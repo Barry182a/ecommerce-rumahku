@@ -84,6 +84,27 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
     );
   }
 
+  if (order.paymentMethod === 'midtrans' && order.paymentStatus !== 'paid') {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-24">
+        <Header title="Status Pembayaran" showBack={true} showSearch={false} />
+        <div className="p-5">
+          <div className="bg-white rounded-3xl p-6 shadow-sm">
+            <h1 className="text-xl font-bold text-black">Pembayaran belum berhasil</h1>
+            <p className="mt-2 text-sm text-gray-600">
+              Pembayaran Anda belum selesai atau belum terkonfirmasi sistem.
+            </p>
+            <Link
+              href="/checkout"
+              className="mt-5 inline-flex rounded-2xl bg-red-600 px-5 py-3 text-sm font-semibold text-white"
+            >
+              Kembali ke Checkout
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const items = Array.isArray(order.items) ? (order.items as any[]) : [];
   const paymentLabel = getPaymentMethodLabel(order.paymentMethod);
   const paymentStatusLabel = getPaymentStatusLabel(order.paymentMethod, order.paymentStatus, from);
@@ -95,7 +116,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
       <div className="p-5 space-y-4">
         <div className="rounded-3xl bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-start gap-3">
-           
+
 
             <div>
               <h1 className="text-xl font-bold text-black">{paymentStatusLabel}</h1>

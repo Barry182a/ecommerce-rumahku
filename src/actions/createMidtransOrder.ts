@@ -88,8 +88,8 @@ export async function createMidtransOrder(data: {
       name: item.name,
     })),
     callbacks: {
-      finish: `${appUrl}/checkout/success?orderId=${order.orderId}&from=snap_success`,
-    },
+      finish: `${appUrl}/checkout/status?orderId=${order.orderId}`,
+    }
   });
 
   await prisma.order.update({

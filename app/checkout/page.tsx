@@ -126,12 +126,12 @@ export default function CheckoutPage() {
           goToSuccessPage(transaction.orderId, '&from=snap_success');
         },
         onPending: function () {
-          clearCart();
-          goToSuccessPage(transaction.orderId, '&from=snap_pending');
+          setIsSubmitting(false);
+          alert('Pembayaran belum selesai. Silakan scan QR atau selesaikan pembayaran Anda.');
         },
         onError: function () {
           setIsSubmitting(false);
-          goToSuccessPage(transaction.orderId, '&from=snap_error');
+          alert('Pembayaran gagal atau belum bisa diproses.');
         },
         onClose: function () {
           setIsSubmitting(false);
