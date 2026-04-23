@@ -87,6 +87,17 @@ export async function createMidtransOrder(data: {
       quantity: item.quantity,
       name: item.name,
     })),
+
+    enabled_payments: [
+      'gopay',
+      'shopeepay',
+      'dana',
+      'bca_va',
+      'bni_va',
+      'bri_va',
+      'permata_va',
+      'mandiri_va'
+    ],
     callbacks: {
       finish: `${appUrl}/checkout/success?orderId=${order.orderId}&from=snap_success`,
     }
