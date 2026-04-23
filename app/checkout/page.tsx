@@ -3,12 +3,27 @@
 import { useState, useEffect } from 'react';
 import { useCart } from '@/src/context/CartContext';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
-import { createOrder } from '@/src/actions/createOrder';
 import Header from '@/app/components/Header';
 import Script from 'next/script';
+import { createOrder } from '@/src/actions/createOrder';
 import { createMidtransOrder } from '@/src/actions/createMidtransOrder';
+
+declare global {
+  interface Window {
+    snap?: {
+      pay: (
+        token: string,
+        options?: {
+          onSuccess?: (result: any) => void;
+          onPending?: (result: any) => void;
+          onError?: (result: any) => void;
+          onClose?: () => void;
+        }
+      ) => void;
+    };
+  }
+}
 
 export default function CheckoutPage() {
   const { cartItems, clearCart } = useCart();
@@ -16,18 +31,21 @@ export default function CheckoutPage() {
   const [checkoutItems, setCheckoutItems] = useState<any[]>([]);
   const [isClient, setIsClient] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [snapReady, setSnapReady] = useState(false);
+  const [isRedirectingToSuccess, setIsRedirectingToSuccess] = useState(false);
+
   const [formData, setFormData] = useState({
     nama: '',
     noHp: '',
     alamat: '',
     paymentMethod: 'cod' as 'cod' | 'midtrans',
   });
-  // subtotal
-  const subtotal = cartItems.reduce(
+
+  const subtotal = checkoutItems.reduce(
     (sum, item) => sum + item.harga * item.quantity,
     0
   );
+
   const isFormValid =
     formData.nama.trim() !== '' &&
     formData.noHp.trim() !== '' &&
@@ -36,14 +54,36 @@ export default function CheckoutPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
+    const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
   };
+
+  const goToSuccessPage = (orderId: string, extraQuery = '') => {
+    setIsRedirectingToSuccess(true);
+    clearCart();
+    router.push(`/checkout/success?orderId=${orderId}${extraQuery}`);
+  };
+
   const handleSubmit = async () => {
     if (!isFormValid) {
       alert('Mohon lengkapi semua data pemesan!');
+      return;
+    }
+
+    if (checkoutItems.length === 0) {
+      alert('Keranjang checkout kosong.');
+      return;
+    }
+
+    if (
+      formData.paymentMethod === 'midtrans' &&
+      (typeof window === 'undefined' || !window.snap)
+    ) {
+      alert('Midtrans Snap belum siap. Coba reload halaman sebentar lagi.');
       return;
     }
 
@@ -60,30 +100,7 @@ export default function CheckoutPage() {
           total: subtotal,
         });
 
-        let message = `🛒 *PESANAN BARU*\n\n`;
-        message += `Order ID: ${order.orderId}\n\n`;
-        message += `Nama: ${formData.nama}\n`;
-        message += `No HP: ${formData.noHp}\n`;
-        message += `Alamat: ${formData.alamat}\n\n`;
-        message += `━━━━━━━━━━━━━━━\n`;
-        message += `Daftar Barang:\n\n`;
-
-        checkoutItems.forEach((item, i) => {
-          message += `${i + 1}. ${item.nama}\n`;
-          message += `Kode: ${item.kodeVarian}\n`;
-          message += `${item.warna} - ${item.ukuran} x${item.quantity}\n\n`;
-        });
-
-        message += `Total: Rp ${subtotal.toLocaleString('id-ID')}\n\n`;
-        message += `━━━━━━━━━━━━━━━\n`;
-        message += `Metode Bayar: COD\n\n`;
-        message += `Terima kasih 🙏`;
-
-        const waUrl = `https://wa.me/6281998183644?text=${encodeURIComponent(message)}`;
-        window.open(waUrl, '_blank', 'noopener,noreferrer');
-
-        clearCart();
-        router.push('/');
+        goToSuccessPage(order.orderId);
         return;
       }
 
@@ -95,20 +112,30 @@ export default function CheckoutPage() {
         total: subtotal,
       });
 
-      // @ts-ignore
+      if (!transaction?.token || !transaction?.orderId) {
+        throw new Error('Gagal membuat transaksi Midtrans.');
+      }
+
+      if (!window.snap) {
+        throw new Error('Midtrans Snap tidak tersedia di browser.');
+      }
+
       window.snap.pay(transaction.token, {
         onSuccess: function () {
           clearCart();
-          router.push('/');
+          goToSuccessPage(transaction.orderId, '&from=snap_success');
         },
         onPending: function () {
-          router.push('/');
+          clearCart();
+          goToSuccessPage(transaction.orderId, '&from=snap_pending');
         },
         onError: function () {
-          alert('Pembayaran gagal diproses.');
+          setIsSubmitting(false);
+          goToSuccessPage(transaction.orderId, '&from=snap_error');
         },
         onClose: function () {
-          alert('Kamu menutup popup pembayaran sebelum menyelesaikan transaksi.');
+          setIsSubmitting(false);
+          console.log('Popup Midtrans ditutup oleh user');
         },
       });
     } catch (err: any) {
@@ -116,14 +143,11 @@ export default function CheckoutPage() {
       setIsSubmitting(false);
     }
   };
-  useEffect(() => {
-    if (isClient && cartItems.length === 0) {
-      router.push('/');
-    }
-  }, [isClient, cartItems.length, router]);
+
   useEffect(() => {
     setIsClient(true);
   }, []);
+
   useEffect(() => {
     const savedCheckout = localStorage.getItem('checkoutCart');
 
@@ -135,31 +159,81 @@ export default function CheckoutPage() {
       setCheckoutItems(cartItems);
     }
   }, [cartItems]);
+
+  useEffect(() => {
+    if (!isClient) return;
+
+    const checkSnap = () => {
+      if (typeof window !== 'undefined' && window.snap) {
+        setSnapReady(true);
+        return true;
+      }
+      return false;
+    };
+
+    if (checkSnap()) return;
+
+    const interval = setInterval(() => {
+      if (checkSnap()) {
+        clearInterval(interval);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isClient]);
+
+  useEffect(() => {
+    console.log('MIDTRANS CLIENT KEY:', process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+    if (isRedirectingToSuccess) return;
+
+    if (checkoutItems.length === 0) {
+      router.push('/');
+    }
+  }, [isClient, checkoutItems.length, isRedirectingToSuccess, router]);
+
   if (!isClient) return null;
-  if (checkoutItems.length === 0) {
+
+  if (checkoutItems.length === 0 && !isRedirectingToSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         Keranjang kosong...
       </div>
     );
   }
-  <Script
-    src={
-      process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true'
-        ? 'https://app.midtrans.com/snap/snap.js'
-        : 'https://app.sandbox.midtrans.com/snap/snap.js'
-    }
-    data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
-    strategy="afterInteractive"
-  />
+
   return (
     <>
+      <Script
+        id="midtrans-snap"
+        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+        strategy="afterInteractive"
+        onLoad={() => {
+          console.log('Midtrans script loaded');
+          if (window.snap) {
+            setSnapReady(true);
+          }
+        }}
+        onError={() => {
+          console.error('Gagal memuat Midtrans Snap script');
+          setSnapReady(false);
+        }}
+      />
+
       <div className="min-h-screen bg-gray-50 pb-32">
-        {/* Header */}
         <Header title="Checkout" showBack={true} showSearch={false} />
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-8">
-          {/* DATA PEMESAN */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+          className="p-5 space-y-8"
+        >
           <div className="bg-white rounded-3xl p-6 space-y-4">
             <h2 className="font-semibold text-lg">Data Pemesan</h2>
 
@@ -190,20 +264,17 @@ export default function CheckoutPage() {
             />
           </div>
 
-          {/* RINGKASAN */}
           <div className="bg-white rounded-3xl p-6">
-            <h2 className="font-semibold text-lg mb-4">
-              Ringkasan Pesanan
-            </h2>
+            <h2 className="font-semibold text-lg mb-4">Ringkasan Pesanan</h2>
 
             <div className="space-y-4">
-              {cartItems.map((item) => (
+              {checkoutItems.map((item) => (
                 <div key={item.id} className="flex gap-3">
                   <div className="relative w-16 h-16 rounded-xl overflow-hidden">
                     <Image
                       src={item.foto}
                       alt={item.nama}
-                      sizes="100vw"
+                      sizes="64px"
                       fill
                       className="object-cover"
                     />
@@ -211,23 +282,18 @@ export default function CheckoutPage() {
 
                   <div>
                     <p className="font-medium line-clamp-1">{item.nama}</p>
-
-                    {/* Teks Varian Dinamis */}
                     <p className="text-sm text-gray-500 mt-1">
                       {[
                         item.warna ? item.warna : null,
                         item.ukuran ? `Ukuran ${item.ukuran}` : null,
-                        `Jumlah ${item.quantity}`
+                        `Jumlah ${item.quantity}`,
                       ]
                         .filter(Boolean)
                         .join(' • ')}
                     </p>
-
-                    {/* TAMBAHAN DI SINI: Harga Varian (Warna text-red-600, ukuran text-sm sama seperti varian) */}
                     <p className="text-sm text-red-600 mt-0.5">
                       Rp {(item.harga * item.quantity).toLocaleString('id-ID')}
                     </p>
-
                   </div>
                 </div>
               ))}
@@ -241,13 +307,10 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* METODE BAYAR */}
           <div className="bg-white rounded-3xl p-6">
             <h2 className="font-semibold text-lg mb-4">Metode Pembayaran</h2>
 
             <div className="space-y-4">
-
-              {/* COD */}
               <label
                 className={`flex gap-3 p-4 border-2 rounded-2xl cursor-pointer transition-all ${formData.paymentMethod === 'cod'
                   ? 'border-red-600 bg-red-50'
@@ -276,8 +339,8 @@ export default function CheckoutPage() {
 
               <label
                 className={`flex gap-3 p-4 border rounded-2xl cursor-pointer transition-all ${formData.paymentMethod === 'midtrans'
-                    ? 'border-red-600 bg-red-50'
-                    : 'border-gray-300'
+                  ? 'border-red-600 bg-red-50'
+                  : 'border-gray-300'
                   }`}
               >
                 <input
@@ -294,34 +357,26 @@ export default function CheckoutPage() {
                   </p>
                 </div>
               </label>
-
             </div>
           </div>
         </form>
 
-        {/* FOOTER */}
         <div className="fixed bottom-0 left-0 right-0 bg-white p-3">
           <button
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="w-full bg-red-600 text-white py-3 rounded-2xl font-semibold shadow-md active:scale-95 transition-all"
+            className="w-full bg-red-600 text-white py-3 rounded-2xl font-semibold shadow-md active:scale-95 transition-all disabled:opacity-60"
           >
             {isSubmitting ? '⏳ Memproses...' : 'Pesan Sekarang'}
           </button>
         </div>
       </div>
+
       {isSubmitting && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-2xl text-center">
-            {!showSuccess ? (
-              <p className="text-lg font-semibold">Memproses pesanan...</p>
-            ) : (
-              <>
-                <div className="text-4xl mb-2">✅</div>
-                <p className="text-lg font-semibold">Pesanan berhasil!</p>
-              </>
-            )}
+            <p className="text-lg font-semibold">Memproses pesanan...</p>
           </div>
         </div>
       )}

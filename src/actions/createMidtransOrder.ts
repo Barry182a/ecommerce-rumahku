@@ -70,6 +70,8 @@ export async function createMidtransOrder(data: {
     },
   });
 
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+
   const transaction = await snap.createTransaction({
     transaction_details: {
       order_id: order.orderId,
@@ -85,6 +87,9 @@ export async function createMidtransOrder(data: {
       quantity: item.quantity,
       name: item.name,
     })),
+    callbacks: {
+      finish: `${appUrl}/checkout/success?orderId=${order.orderId}&from=snap_success`,
+    },
   });
 
   await prisma.order.update({
