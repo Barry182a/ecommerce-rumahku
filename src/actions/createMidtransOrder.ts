@@ -88,7 +88,7 @@ export async function createMidtransOrder(data: {
       name: item.name,
     })),
     callbacks: {
-      finish: `${appUrl}/checkout/status?orderId=${order.orderId}`,
+      finish: `${appUrl}/checkout/success?orderId=${order.orderId}&from=snap_success`,
     }
   });
 
