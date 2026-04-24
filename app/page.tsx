@@ -1,6 +1,7 @@
 import { prisma } from '@/src/lib/prisma';
 import Header from './components/Header';
 import HomeClient from './HomeClient';
+import { pageContainer } from '@/src/lib/layout';
 
 export default async function HomePage() {
   try {
@@ -22,9 +23,9 @@ export default async function HomePage() {
     ]);
 
     return (
-      <div className="bg-gray-50 min-h-screen">
+      <div className="min-h-screen bg-gray-50">
         <Header />
-        <main className="max-w-md mx-auto bg-white min-h-screen pt-[72px] pb-24 shadow-2xl relative">
+        <main className={`${pageContainer} min-h-screen bg-white pt-0 pb-24 shadow-2xl`}>
           <HomeClient
             banners={banners}
             categories={categories}
@@ -37,12 +38,12 @@ export default async function HomePage() {
     console.error('HOME PAGE ERROR:', error);
 
     return (
-      <div className="bg-gray-50 min-h-screen">
+      <div className="min-h-screen bg-gray-50">
         <Header />
-        <main className="max-w-md mx-auto bg-white min-h-screen pt-[72px] pb-24 shadow-2xl relative p-4">
-          <div className="rounded-2xl bg-red-50 border border-red-200 p-4">
+        <main className={`${pageContainer} min-h-screen bg-white px-4 pt-[72px] pb-24 shadow-2xl`}>
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
             <h1 className="font-bold text-red-700">Halaman sedang bermasalah</h1>
-            <p className="text-sm text-red-600 mt-2">
+            <p className="mt-2 text-sm text-red-600">
               Koneksi database terputus. Coba refresh beberapa saat lagi.
             </p>
           </div>

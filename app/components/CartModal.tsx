@@ -4,6 +4,8 @@ import Image from 'next/image';
 import { X, Trash2 } from 'lucide-react';
 import { useCart } from '@/src/context/CartContext';
 
+const formatSizeLabel = (size?: string) => String(size || '').trim().toUpperCase();
+
 interface CartModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -91,7 +93,12 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                   <div className="flex-1 min-w-0">
                     <p className="font-Inter text-black line-clamp-2">{item.nama}</p>
                     <p className="text-sm text-gray-500 mt-1">
-                      {item.warna} {item.ukuran}
+                      {[
+                        item.warna ? item.warna : null,
+                        item.ukuran ? `Ukuran ${formatSizeLabel(item.ukuran)}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' • ')}
                     </p>
 
                     {isOutOfStock && (
@@ -129,7 +136,15 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
                         {/* Tombol Hapus */}
                         <button
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() => {
+                            const confirmed = window.confirm(
+                              `Hapus "${item.nama}" dari keranjang?`
+                            );
+
+                            if (confirmed) {
+                              removeFromCart(item.id);
+                            }
+                          }}
                           className="text-gray-400 hover:text-red-500 p-2 bg-white rounded-xl border border-gray-100 shadow-sm transition-colors"
                         >
                           <Trash2 size={18} />

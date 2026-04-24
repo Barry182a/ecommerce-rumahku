@@ -96,7 +96,6 @@ export async function createMidtransOrder(data: {
       'bni_va',
       'bri_va',
       'permata_va',
-      'mandiri_bill',
       'bsi_va',
       'seabank_va',
       'danamon_va',
