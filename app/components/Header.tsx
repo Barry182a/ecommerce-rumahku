@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ShoppingCart, ArrowLeft } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import CartModal from './CartModal';
 import SearchBar from './SearchBar';
 import { pageContainer, pagePadding } from '@/src/lib/layout';
+import { useCart } from '@/src/context/CartContext';
 
 type HeaderProps = {
   title?: string;
@@ -25,20 +26,7 @@ export default function Header({
 }: HeaderProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [cartItems, setCartItems] = useState([]);
-  const [isMounted, setIsMounted] = useState(false);
-
-  const updateCart = () => {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    setCartItems(cart);
-  };
-
-  useEffect(() => {
-    setIsMounted(true);
-    updateCart();
-    window.addEventListener('storage', updateCart);
-    return () => window.removeEventListener('storage', updateCart);
-  }, []);
+  const { itemCount } = useCart();
 
   return (
     <>
@@ -83,9 +71,9 @@ export default function Header({
                     className="relative rounded-2xl border border-gray-300 p-3 text-gray-700 transition-colors hover:bg-gray-50 active:scale-95"
                   >
                     <ShoppingCart size={16} />
-                    {isMounted && cartItems.length > 0 && (
+                    {itemCount > 0 && (
                       <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-red-600 text-[10px] font-bold text-white">
-                        {cartItems.length}
+                        {itemCount}
                       </span>
                     )}
                   </button>

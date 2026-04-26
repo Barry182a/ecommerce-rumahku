@@ -8,6 +8,11 @@ import { pageContainer, pagePadding } from '@/src/lib/layout';
 
 const formatSizeLabel = (size?: string) => String(size || '').trim().toUpperCase();
 
+const isRealVariantValue = (value?: string) => {
+    const normalized = String(value || '').trim().toLowerCase();
+    return normalized !== '' && normalized !== 'default' && normalized !== '-';
+};
+
 type CustomerOrder = {
     orderId: string;
     paymentMethod: 'cod' | 'midtrans';
@@ -128,7 +133,7 @@ export default function PesananPage() {
         <div className="min-h-screen bg-gray-50 pb-24">
             <Header
                 title="Pesanan"
-                showBack={true}
+                showBack={false}
                 showSearch={false}
                 showWhatsapp={false}
                 showCart={false}
@@ -171,29 +176,24 @@ export default function PesananPage() {
                             </div>
 
                             {order.isCanceled ? (
-                                <div className="mt-4 rounded-2xl bg-red-50 p-4">
-                                    <p className="text-sm font-semibold text-red-800">Pesanan batal</p>
-                                    <p className="mt-1 text-sm text-red-700">
-                                        Pesanan Anda dibatalkan oleh penjual atau sistem.
+                                <div className="mt-2 p-2">
+                                    <p className="mt-1 text-lg text-red-500">
+                                        Pesanan Anda dibatalkan oleh penjual.
                                     </p>
                                 </div>
                             ) : order.isCompleted ? (
                                 <div className="mt-2 p-2">
-                                    <p className="text-sm font-semibold text-green-600">✅Pesanan selesai</p>
+                                    <p className="text-lg font-semibold text-green-500">✅Pesanan selesai</p>
                                 </div>
                             ) : order.paymentMethod === 'cod' ? (
-                                <div className="mt-4 rounded-2xl bg-blue-50 p-4">
-                                    <p className="text-sm font-semibold text-blue-800">
-                                        Pesanan akan segera dikirim oleh penjual
-                                    </p>
-                                    <p className="mt-1 text-sm text-blue-700">
-                                        Penjual akan segera memproses dan mengirim pesanan Anda.
+                                <div className="mt-2 p-2">
+                                    <p className="text-lg font-semibold text-blue-500">
+                                        Penjual akan segera mengirim pesanan Anda.
                                     </p>
                                 </div>
                             ) : order.paymentStatus === 'paid' ? (
-                                <div className="mt-4 rounded-2xl bg-green-50 p-4">
-                                    <p className="text-sm font-semibold text-green-800">Pesanan diproses</p>
-                                    <p className="mt-1 text-sm text-green-700">
+                                <div className="mt-2 p-2">
+                                    <p className="mt-1 text-sm text-green-500">
                                         Pembayaran Anda sudah berhasil dan pesanan sedang diproses.
                                     </p>
                                 </div>
@@ -209,10 +209,8 @@ export default function PesananPage() {
 
                                         <p className="mt-1 text-sm text-gray-500">
                                             {[
-                                                item.warna && item.warna !== 'Default' && item.warna !== '-'
-                                                    ? item.warna
-                                                    : null,
-                                                item.ukuran && item.ukuran !== 'Default' && item.ukuran !== '-'
+                                                isRealVariantValue(item.warna) ? item.warna : null,
+                                                isRealVariantValue(item.ukuran)
                                                     ? `Ukuran ${formatSizeLabel(item.ukuran)}`
                                                     : null,
                                                 `Jumlah ${item.quantity}`,

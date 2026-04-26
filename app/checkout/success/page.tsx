@@ -24,7 +24,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
       <div className="min-h-screen bg-gray-50 pb-24">
         <Header
           title="Status Pesanan"
-          showBack={true}
+          showBack={false}
           showSearch={false}
           showWhatsapp={false}
           showCart={false}

@@ -11,6 +11,11 @@ import { createMidtransOrder } from '@/src/actions/createMidtransOrder';
 import { pageContainer, pagePadding } from '@/src/lib/layout';
 
 const formatSizeLabel = (size?: string) => String(size || '').trim().toUpperCase();
+
+const isRealVariantValue = (value?: string) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized !== '' && normalized !== 'default' && normalized !== '-';
+};
 declare global {
   interface Window {
     snap?: {
@@ -271,7 +276,7 @@ export default function CheckoutPage() {
       />
 
       <div className="min-h-screen bg-gray-50 pb-32">
-        <Header title="Checkout" showBack={true} showSearch={false} showWhatsapp={true} showCart={false} />
+        <Header title="Checkout" showBack={false} showSearch={false} showWhatsapp={true} showCart={false} />
 
         <main className={`${pageContainer} ${pagePadding} pt-5`}>
           <form
@@ -333,8 +338,10 @@ export default function CheckoutPage() {
                       <p className="line-clamp-2 font-medium">{item.nama}</p>
                       <p className="mt-1 text-sm text-gray-500">
                         {[
-                          item.warna ? item.warna : null,
-                          item.ukuran ? `Ukuran ${formatSizeLabel(item.ukuran)}` : null,
+                          isRealVariantValue(item.warna) ? item.warna : null,
+                          isRealVariantValue(item.ukuran)
+                            ? `Ukuran ${formatSizeLabel(item.ukuran)}`
+                            : null,
                           `Jumlah ${item.quantity}`,
                         ]
                           .filter(Boolean)

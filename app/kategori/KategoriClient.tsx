@@ -21,13 +21,13 @@ export default function KategoriClient({ categories }: { categories: any[] }) {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      <Header title="Kategori" showBack={true} showSearch={false} showWhatsapp={true} showCart={true} />
+      <Header title="Kategori" showBack={false} showSearch={false} showWhatsapp={true} showCart={true} />
 
       <main className={`${pageContainer} bg-white ${pagePadding} pt-6`}>
         <div className="grid grid-cols-2 gap-x-4 gap-y-6 pb-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {categories.map((cat) => (
             <Link
-              href={`/?cat=${cat.id}`}
+              href={`/search?category=${cat.id}`}
               key={cat.id}
               className="group flex flex-col"
             >

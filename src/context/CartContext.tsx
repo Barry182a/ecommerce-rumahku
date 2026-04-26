@@ -22,23 +22,28 @@ interface CartContextType {
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
+  syncCartStock: () => Promise<void>;
   itemCount: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cart');
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
+    const saved = localStorage.getItem('cart');
+    if (saved) {
+      setCartItems(JSON.parse(saved));
+    }
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
     localStorage.setItem('cart', JSON.stringify(cartItems));
-  }, [cartItems]);
+  }, [cartItems, isHydrated]);
 
   const addToCart = (newItem: Omit<CartItem, 'id' | 'quantity'>) => {
     setCartItems(prev => {
@@ -65,17 +70,68 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const updateQuantity = (id: string, quantity: number) => {
-  setCartItems(prev =>
-    prev.map(item => {
-      if (item.id === id) {
-        const limitStok = item.stok || 1; 
-        const newQty = Math.max(1, Math.min(quantity, limitStok));
-        return { ...item, quantity: newQty };
+    setCartItems(prev =>
+      prev.map(item => {
+        if (item.id === id) {
+          const limitStok = Math.max(0, Number(item.stok) || 0);
+
+          if (limitStok <= 0) {
+            return { ...item, stok: 0 };
+          }
+
+          const newQty = Math.max(1, Math.min(quantity, limitStok));
+          return { ...item, quantity: newQty };
+        }
+        return item;
+      })
+    );
+  };
+
+  const syncCartStock = async () => {
+    if (cartItems.length === 0) return;
+
+    try {
+      const kodeVarianList = cartItems.map((item) => item.kodeVarian);
+
+      const res = await fetch('/api/cart/stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kodeVarianList }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Gagal sinkron stok keranjang');
       }
-      return item;
-    })
-  );
-};
+
+      const latestVariants = await res.json();
+
+      setCartItems((prev) =>
+        prev.map((item) => {
+          const latest = latestVariants.find(
+            (variant: any) => variant.kodeVarian === item.kodeVarian
+          );
+
+          if (!latest) {
+            return { ...item, stok: 0, quantity: 1 };
+          }
+
+          const latestStock = Number(latest.stok) || 0;
+
+          return {
+            ...item,
+            stok: latestStock,
+            warna: latest.warna ?? item.warna,
+            ukuran: latest.ukuran ?? item.ukuran,
+            harga: latest.harga ?? item.harga,
+            quantity:
+              latestStock <= 0 ? item.quantity : Math.min(item.quantity, latestStock),
+          };
+        })
+      );
+    } catch (error) {
+      console.error('SYNC CART STOCK ERROR:', error);
+    }
+  };
 
   const clearCart = () => setCartItems([]);
 
@@ -88,6 +144,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeFromCart,
       updateQuantity,
       clearCart,
+      syncCartStock,
       itemCount
     }}>
       {children}

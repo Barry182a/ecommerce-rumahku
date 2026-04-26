@@ -1,6 +1,7 @@
 import { getSearchResults } from '@/src/actions/searchActions';
+import { prisma } from '@/src/lib/prisma';
 import Link from 'next/link';
-import { PackageX, Search, Home, Grid } from 'lucide-react';
+import { PackageX, Search } from 'lucide-react';
 import SortDropdown from './SortDropdown';
 import Header from '../components/Header';
 import ProductCard from '../components/ProductCard';
@@ -10,43 +11,72 @@ import { pageContainer, pagePadding } from '@/src/lib/layout';
 export const dynamic = 'force-dynamic';
 
 export default async function SearchPage(props: {
-  searchParams: Promise<{ q?: string; sort?: string }>;
+  searchParams: Promise<{ q?: string; sort?: string; category?: string }>;
 }) {
   const searchParams = await props.searchParams;
   const query = searchParams?.q || '';
   const sortBy = searchParams?.sort || 'relevan';
+  const category = searchParams?.category || '';
 
-  let results = [];
+  let results: any[] = [];
+  let categoryName = '';
 
-  if (query) {
+  if (category) {
+    const categoryData = await prisma.category.findUnique({
+      where: { id: category },
+      select: { nama: true },
+    });
+
+    categoryName = categoryData?.nama || '';
+
+    results = await prisma.product.findMany({
+      where: { categoryId: category },
+      include: { varian: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  } else if (query) {
     results = await getSearchResults(query);
-
-    if (sortBy === 'termurah') results.sort((a, b) => a.hargaDasar - b.hargaDasar);
-    else if (sortBy === 'termahal') results.sort((a, b) => b.hargaDasar - a.hargaDasar);
-    else if (sortBy === 'terbaru') {
-      results.sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-    }
   }
+
+  if (sortBy === 'termurah') {
+    results.sort((a, b) => a.hargaDasar - b.hargaDasar);
+  } else if (sortBy === 'termahal') {
+    results.sort((a, b) => b.hargaDasar - a.hargaDasar);
+  } else if (sortBy === 'terbaru') {
+    results.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  const hasFilter = !!query || !!category;
+  const displayTitle = categoryName ? `Kategori: ${categoryName}` : 'Cari Produk';
+  const displayHint = categoryName
+    ? 'Menampilkan semua produk dari kategori ini'
+    : 'Ketik nama produk di atas';
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      <Header title="Cari" showBack={true} showSearch={true} showWhatsapp={true} showCart={true} />
+      <Header
+        title="Cari"
+        showBack={false}
+        showSearch={true}
+        showWhatsapp={true}
+        showCart={true}
+      />
 
       <main className={`${pageContainer} bg-white ${pagePadding} pt-4`}>
-        {!query ? (
+        {!hasFilter ? (
           <div className="py-20 text-center">
             <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-gray-100 bg-gray-50 shadow-sm">
               <Search size={40} className="text-gray-300" />
             </div>
 
             <h1 className="mb-2 text-lg uppercase tracking-wide text-gray-800">
-              Cari Produk
+              {displayTitle}
             </h1>
 
             <p className="mb-8 text-[10px] uppercase tracking-widest text-gray-400">
-              Ketik nama produk di atas
+              {displayHint}
             </p>
 
             <div className="flex flex-wrap justify-center gap-3">
@@ -63,9 +93,17 @@ export default async function SearchPage(props: {
           </div>
         ) : (
           <>
+            {categoryName && (
+              <div className="mb-4">
+                <h1 className="text-lg font-semibold text-gray-800">
+                  {categoryName}
+                </h1>
+              </div>
+            )}
+
             <div className="mb-6 flex flex-col gap-3">
               {results.length > 0 && (
-                <SortDropdown currentSort={sortBy} query={query} />
+                <SortDropdown currentSort={sortBy} query={query} category={category} />
               )}
             </div>
 
@@ -82,7 +120,7 @@ export default async function SearchPage(props: {
                   Produk Tidak Ditemukan
                 </h2>
                 <p className="mb-8 text-[10px] uppercase tracking-widest text-gray-400">
-                  Coba kata kunci lain
+                  Coba kata kunci atau kategori lain
                 </p>
                 <Link
                   href="/"

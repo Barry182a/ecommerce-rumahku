@@ -34,8 +34,7 @@ function normalizeOptionalText(value: unknown) {
 }
 
 function normalizeVariantField(value: unknown) {
-  const cleaned = normalizeText(value);
-  return cleaned === '' ? DEFAULT_VARIANT_VALUE : cleaned;
+  return normalizeText(value);
 }
 
 function normalizeNumber(value: unknown, fallback = 0) {
@@ -74,6 +73,41 @@ function normalizeVariantsForSave(variants: VariantInput[], hargaDasar: number) 
   return Array.from(deduped.values());
 }
 
+function isRealVariantValue(value: unknown) {
+  const cleaned = normalizeText(value).toLowerCase();
+  return cleaned !== '' && cleaned !== DEFAULT_VARIANT_VALUE.toLowerCase() && cleaned !== '-';
+}
+
+function getVariantPattern(variant: VariantInput) {
+  const hasWarna = isRealVariantValue(variant.warna);
+  const hasUkuran = isRealVariantValue(variant.ukuran);
+
+  if (hasWarna && hasUkuran) return 'WARNA_UKURAN';
+  if (hasWarna) return 'WARNA';
+  if (hasUkuran) return 'UKURAN';
+  return 'EMPTY';
+}
+
+function validateVariantPatternConsistency(variants: VariantInput[]) {
+  const filledVariants = variants.filter((variant) => !isVariantCompletelyEmpty(variant));
+
+  if (filledVariants.length <= 1) return;
+
+  const patterns = Array.from(
+    new Set(
+      filledVariants
+        .map((variant) => getVariantPattern(variant))
+        .filter((pattern) => pattern !== 'EMPTY')
+    )
+  );
+
+  if (patterns.length > 1) {
+    throw new Error(
+      'Varian produk tidak konsisten. Semua varian dalam satu produk harus memakai pola yang sama.'
+    );
+  }
+}
+
 export async function createProduct(data: CreateProductProps) {
   const kodeUnik = normalizeText(data.kodeUnik);
   const nama = normalizeText(data.nama);
@@ -81,6 +115,7 @@ export async function createProduct(data: CreateProductProps) {
   const fotoUtama = normalizeText(data.fotoUtama);
   const keywords = normalizeText(data.keywords) || null;
   const hargaDasarFix = Math.max(0, Math.round(normalizeNumber(data.hargaDasar, 0)));
+  validateVariantPatternConsistency(data.variants || []);
   const normalizedVariants = normalizeVariantsForSave(data.variants || [], hargaDasarFix);
 
   if (!kodeUnik) throw new Error('Kode unik wajib diisi');

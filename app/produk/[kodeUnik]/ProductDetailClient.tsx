@@ -45,6 +45,15 @@ export default function ProductDetailClient({
     [product.varian]
   );
 
+  const hasStockForColor = (color: string) =>
+    product.varian?.some((v: any) => v.warna === color && Number(v.stok) > 0);
+
+  const hasStockForSize = (size: string) =>
+    product.varian?.some((v: any) => {
+      const colorMatch = isColorDummy || v.warna === selectedColor;
+      return colorMatch && v.ukuran === size && Number(v.stok) > 0;
+    });
+
   const isColorDummy =
     allColors.length === 1 && dummyValues.includes((allColors[0] ?? '').trim());
 
@@ -57,13 +66,16 @@ export default function ProductDetailClient({
   }, [isColorDummy, allColors, isSizeDummy, allSizes]);
 
   const availableSizesToPick = useMemo(() => {
-    if (isSizeDummy) return allSizes;
+    if (isSizeDummy) return allSizes.filter((size) => hasStockForSize(size));
     if (!isColorDummy && !selectedColor) return [];
 
     return Array.from(
       new Set(
         product.varian
-          .filter((v: any) => isColorDummy || v.warna === selectedColor)
+          .filter((v: any) => {
+            const colorMatch = isColorDummy || v.warna === selectedColor;
+            return colorMatch && Number(v.stok) > 0;
+          })
           .map((v: any) => v.ukuran)
       )
     ) as string[];
@@ -76,9 +88,13 @@ export default function ProductDetailClient({
   const selectedVariant = product.varian?.find((v: any) => {
     const colorMatch = isColorDummy ? true : v.warna === selectedColor;
     const sizeMatch = isSizeDummy ? true : v.ukuran === selectedSize;
-    return colorMatch && sizeMatch;
+    return colorMatch && sizeMatch && Number(v.stok) > 0;
   });
+  const totalStock = Array.isArray(product.varian)
+    ? product.varian.reduce((sum: number, variant: any) => sum + (Number(variant.stok) || 0), 0)
+    : 0;
 
+  const isProductOutOfStock = totalStock <= 0;
   const hasValidColor = isColorDummy || !!selectedColor;
   const hasValidSize = isSizeDummy || !!selectedSize;
   const isValidSelection = hasValidColor && hasValidSize && !!selectedVariant;
@@ -86,7 +102,7 @@ export default function ProductDetailClient({
   const currentPrice = selectedVariant ? selectedVariant.harga : product.hargaDasar;
   const currentStock = selectedVariant ? selectedVariant.stok : 0;
   const currentImage = activeImage || product.fotoUtama;
-  
+
 
   useEffect(() => {
     if (selectedVariant?.fotoVarian) setActiveImage(selectedVariant.fotoVarian);
@@ -114,7 +130,7 @@ export default function ProductDetailClient({
   return (
     <>
       <div className="min-h-screen bg-gray-50 pb-28">
-        <Header title="Detail Produk" showBack={true} showSearch={false} showWhatsapp={false} showCart={true} />
+        <Header title="Detail Produk" showBack={false} showSearch={false} showWhatsapp={false} showCart={true} />
 
         <main className={`${pageContainer} bg-white`}>
           <div className="grid grid-cols-1 md:grid-cols-2">
@@ -166,6 +182,12 @@ export default function ProductDetailClient({
                     Rp {currentPrice.toLocaleString('id-ID')}
                   </p>
 
+                  {isProductOutOfStock && (
+                    <p className="mt-2 text-sm font-semibold text-red-600">
+                      Produk ini sedang habis
+                    </p>
+                  )}
+
                   {isValidSelection && (
                     <p className="mt-2 text-sm text-gray-700">
                       Stok tersisa:{' '}
@@ -181,18 +203,25 @@ export default function ProductDetailClient({
                     <div>
                       <p className="mb-3 text-black">Pilih Warna</p>
                       <div className="flex flex-wrap gap-3">
-                        {allColors.map((color) => (
-                          <button
-                            key={color}
-                            onClick={() => setSelectedColor(color)}
-                            className={`rounded-2xl border px-5 py-3 font-medium transition-all ${selectedColor === color
-                              ? 'border-red-600 bg-red-600 text-white shadow-sm shadow-red-200'
-                              : 'border-gray-300 bg-white text-black hover:border-gray-400'
-                              }`}
-                          >
-                            {color}
-                          </button>
-                        ))}
+                        {allColors.map((color) => {
+                          const disabled = !hasStockForColor(color);
+
+                          return (
+                            <button
+                              key={color}
+                              onClick={() => !disabled && setSelectedColor(color)}
+                              disabled={disabled}
+                              className={`rounded-2xl border px-5 py-3 font-medium transition-all ${disabled
+                                ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 line-through'
+                                : selectedColor === color
+                                  ? 'border-red-600 bg-red-600 text-white shadow-sm shadow-red-200'
+                                  : 'border-gray-300 bg-white text-black hover:border-gray-400'
+                                }`}
+                            >
+                              {color}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -201,18 +230,25 @@ export default function ProductDetailClient({
                     <div>
                       <p className="mb-3 text-black">Pilih Ukuran</p>
                       <div className="flex flex-wrap gap-3">
-                        {availableSizesToPick.map((size) => (
-                          <button
-                            key={size}
-                            onClick={() => setSelectedSize(size)}
-                            className={`rounded-2xl border px-5 py-3 font-medium transition-all ${selectedSize === size
-                                ? 'border-red-600 bg-red-600 text-white shadow-sm shadow-red-200'
-                                : 'border-gray-300 bg-white text-black hover:border-gray-400'
-                              }`}
-                          >
-                            {formatSizeLabel(size)}
-                          </button>
-                        ))}
+                        {availableSizesToPick.map((size) => {
+                          const disabled = !hasStockForSize(size);
+
+                          return (
+                            <button
+                              key={size}
+                              onClick={() => !disabled && setSelectedSize(size)}
+                              disabled={disabled}
+                              className={`rounded-2xl border px-5 py-3 font-medium transition-all ${disabled
+                                ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 line-through'
+                                : selectedSize === size
+                                  ? 'border-red-600 bg-red-600 text-white shadow-sm shadow-red-200'
+                                  : 'border-gray-300 bg-white text-black hover:border-gray-400'
+                                }`}
+                            >
+                              {formatSizeLabel(size)}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -273,10 +309,10 @@ export default function ProductDetailClient({
 
             <button
               onClick={handleAddToCart}
-              disabled={!isValidSelection}
-              className={`min-w-[150px] rounded-xl px-4 py-3 text-sm font-medium transition-all sm:min-w-[180px] sm:text-base ${isValidSelection
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'cursor-not-allowed bg-gray-300 text-gray-500'
+              disabled={!isValidSelection || isProductOutOfStock || currentStock <= 0}
+              className={`min-w-[150px] rounded-xl px-4 py-3 text-sm font-medium transition-all sm:min-w-[180px] sm:text-base ${!isValidSelection || isProductOutOfStock || currentStock <= 0
+                ? 'cursor-not-allowed bg-gray-300 text-gray-500'
+                : 'bg-red-600 text-white hover:bg-red-700'
                 }`}
             >
               Masukkan Keranjang

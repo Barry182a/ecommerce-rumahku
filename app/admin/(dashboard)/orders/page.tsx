@@ -43,6 +43,18 @@ export default function OrdersPage() {
     }
   };
 
+  const getOrderStatusText = (order: any) => {
+    if (order.isCanceled) return 'pesanan batal';
+    if (order.isCompleted) return 'pesanan selesai';
+    return order.paymentStatus || 'pending';
+  };
+
+  const getOrderStatusBadge = (order: any) => {
+    if (order.isCanceled) return 'bg-red-100 text-red-700';
+    if (order.isCompleted) return 'bg-green-100 text-green-700';
+    return getPaymentBadge(order.paymentStatus);
+  };
+
   return (
     <div className="p-6 space-y-4 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-bold mb-6">Pesanan Masuk</h1>
@@ -51,11 +63,16 @@ export default function OrdersPage() {
         {orders.length === 0 ? (
           <p className="text-gray-500">Tidak ada pesanan aktif</p>
         ) : (
-          orders.filter(o => !o.isCompleted && !o.isCanceled).map((order) => (
+          orders.map((order) => (
             <div
               key={order.id}
               onClick={() => setSelectedOrder(order)}
-              className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all"
+              className={`p-5 rounded-2xl shadow-sm border cursor-pointer transition-all hover:shadow-md ${order.isCanceled
+                ? 'bg-red-50 border-red-100'
+                : order.isCompleted
+                  ? 'bg-green-50 border-green-100'
+                  : 'bg-white border-gray-100'
+                }`}
             >
               <div className="flex justify-between items-start">
                 <div>
@@ -64,9 +81,9 @@ export default function OrdersPage() {
                   <p className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleString('id-ID')}</p>
                 </div>
                 <span
-                  className={`${getPaymentBadge(order.paymentStatus)} text-[10px] px-2 py-1 rounded-full font-bold uppercase`}
+                  className={`${getOrderStatusBadge(order)} text-[10px] px-2 py-1 rounded-full font-bold uppercase`}
                 >
-                  {order.paymentStatus || 'pending'}
+                  {getOrderStatusText(order)}
                 </span>
               </div>
             </div>
@@ -161,22 +178,34 @@ export default function OrdersPage() {
             </div>
 
             {/* Tombol Aksi */}
-            <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-100">
-              <button
-                disabled={loading}
-                onClick={() => handleAction('COMPLETED')}
-                className="bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-black shadow-lg shadow-green-100 disabled:opacity-50 transition-all flex items-center justify-center uppercase tracking-widest text-xs"
-              >
-                {loading ? 'Processing...' : 'Pesanan Selesai'}
-              </button>
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              {selectedOrder.isCompleted ? (
+                <div className="rounded-2xl bg-green-50 py-4 text-center font-black uppercase tracking-widest text-xs text-green-700">
+                  Pesanan sudah selesai
+                </div>
+              ) : selectedOrder.isCanceled ? (
+                <div className="rounded-2xl bg-red-50 py-4 text-center font-black uppercase tracking-widest text-xs text-red-700">
+                  Pesanan sudah dibatalkan
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    disabled={loading}
+                    onClick={() => handleAction('COMPLETED')}
+                    className="bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-black shadow-lg shadow-green-100 disabled:opacity-50 transition-all flex items-center justify-center uppercase tracking-widest text-xs"
+                  >
+                    {loading ? 'Processing...' : 'Pesanan Selesai'}
+                  </button>
 
-              <button
-                disabled={loading}
-                onClick={() => handleAction('CANCELLED')}
-                className="bg-red-50 hover:bg-red-100 text-red-600 py-4 rounded-2xl font-black disabled:opacity-50 transition-all uppercase tracking-widest text-xs"
-              >
-                Pesanan Batal
-              </button>
+                  <button
+                    disabled={loading}
+                    onClick={() => handleAction('CANCELLED')}
+                    className="bg-red-50 hover:bg-red-100 text-red-600 py-4 rounded-2xl font-black disabled:opacity-50 transition-all uppercase tracking-widest text-xs"
+                  >
+                    Pesanan Batal
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

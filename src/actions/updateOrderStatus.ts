@@ -11,7 +11,9 @@ export async function updateOrderStatus(orderId: string, status: 'COMPLETED' | '
       });
 
       if (!order) throw new Error('Pesanan tidak ditemukan');
-      if (order.isCompleted || order.isCanceled) throw new Error('Pesanan sudah diproses sebelumnya');
+      if (order.isCompleted || order.isCanceled) {
+        throw new Error('Pesanan sudah diproses sebelumnya');
+      }
 
       if (status === 'COMPLETED') {
         if (order.paymentMethod === 'cod') {
@@ -23,7 +25,9 @@ export async function updateOrderStatus(orderId: string, status: 'COMPLETED' | '
             });
 
             if (!variant) throw new Error(`Varian ${item.kodeVarian} tidak ditemukan`);
-            if (variant.stok < item.quantity) throw new Error(`Stok ${item.nama} tidak mencukupi`);
+            if (variant.stok < item.quantity) {
+              throw new Error(`Stok ${item.nama} tidak mencukupi`);
+            }
 
             await tx.productVariant.update({
               where: { id: variant.id },
@@ -40,6 +44,12 @@ export async function updateOrderStatus(orderId: string, status: 'COMPLETED' | '
             },
           });
         } else {
+          if (order.paymentStatus !== 'paid') {
+            throw new Error(
+              'Pesanan online hanya bisa diselesaikan jika pembayaran sudah berhasil.'
+            );
+          }
+
           await tx.order.update({
             where: { id: orderId },
             data: {
@@ -59,6 +69,8 @@ export async function updateOrderStatus(orderId: string, status: 'COMPLETED' | '
       }
 
       revalidatePath('/admin/orders');
+      revalidatePath('/pesanan');
+
       return { success: true, message: 'Status pesanan berhasil diperbarui' };
     });
   } catch (error: any) {

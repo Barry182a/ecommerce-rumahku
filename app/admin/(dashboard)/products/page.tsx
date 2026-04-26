@@ -24,8 +24,7 @@ function normalizeVariantText(value: unknown) {
 }
 
 function normalizeVariantField(value: unknown) {
-  const cleaned = normalizeVariantText(value);
-  return cleaned === '' ? DEFAULT_VARIANT_VALUE : cleaned;
+  return normalizeVariantText(value);
 }
 
 function normalizeVariantPhoto(value: unknown) {
@@ -48,7 +47,7 @@ function isVariantCompletelyEmpty(variant: Variant) {
 }
 
 function normalizeVariantsForSave(variants: Variant[], hargaDasar: number): Variant[] {
-  const normalized = variants
+  const filled = variants
     .filter((variant) => !isVariantCompletelyEmpty(variant))
     .map((variant) => ({
       warna: normalizeVariantField(variant.warna),
@@ -58,14 +57,63 @@ function normalizeVariantsForSave(variants: Variant[], hargaDasar: number): Vari
       fotoVarian: normalizeVariantPhoto(variant.fotoVarian),
     }));
 
+  if (filled.length === 0) {
+    return [
+      {
+        warna: DEFAULT_VARIANT_VALUE,
+        ukuran: DEFAULT_VARIANT_VALUE,
+        harga: Math.max(0, normalizeVariantNumber(hargaDasar, 0)),
+        stok: 0,
+        fotoVarian: '',
+      },
+    ];
+  }
+
   const deduped = new Map<string, Variant>();
 
-  for (const variant of normalized) {
+  for (const variant of filled) {
     const key = `${variant.warna.toLowerCase()}__${variant.ukuran.toLowerCase()}`;
     deduped.set(key, variant);
   }
 
   return Array.from(deduped.values());
+}
+
+function isRealVariantValue(value: unknown) {
+  const cleaned = normalizeVariantText(value).toLowerCase();
+  return cleaned !== '' && cleaned !== DEFAULT_VARIANT_VALUE.toLowerCase() && cleaned !== '-';
+}
+
+function hasVariantIdentity(variant: Variant) {
+  return isRealVariantValue(variant.warna) || isRealVariantValue(variant.ukuran);
+}
+
+function getVariantPattern(variant: Variant) {
+  const hasWarna = isRealVariantValue(variant.warna);
+  const hasUkuran = isRealVariantValue(variant.ukuran);
+
+  if (hasWarna && hasUkuran) return 'WARNA_UKURAN';
+  if (hasWarna) return 'WARNA';
+  if (hasUkuran) return 'UKURAN';
+  return 'EMPTY';
+}
+
+function getMixedVariantPatternError(variants: Variant[]) {
+  const filledVariants = variants.filter((variant) => !isVariantCompletelyEmpty(variant));
+
+  if (filledVariants.length <= 1) return null;
+
+  const patterns = Array.from(
+    new Set(
+      filledVariants
+        .map((variant) => getVariantPattern(variant))
+        .filter((pattern) => pattern !== 'EMPTY')
+    )
+  );
+
+  if (patterns.length <= 1) return null;
+
+  return 'Semua varian dalam satu produk harus konsisten. Jika satu varian memakai warna dan ukuran, maka semua varian wajib memakai warna dan ukuran juga.';
 }
 
 export default function ProductPage() {
@@ -119,8 +167,8 @@ export default function ProductPage() {
 
           if (!isSingleDefault) {
             const formattedVariants = productData.varian.map((v: any) => ({
-              warna: normalizeVariantField(v.warna),
-              ukuran: normalizeVariantField(v.ukuran),
+              warna: isRealVariantValue(v.warna) ? normalizeVariantText(v.warna) : '',
+              ukuran: isRealVariantValue(v.ukuran) ? normalizeVariantText(v.ukuran) : '',
               harga: normalizeVariantNumber(v.harga, productData.hargaDasar),
               stok: Math.max(0, normalizeVariantNumber(v.stok, 0)),
               fotoVarian: normalizeVariantPhoto(v.fotoVarian),
@@ -155,8 +203,8 @@ export default function ProductPage() {
     setVariants([
       ...variants,
       {
-        warna: DEFAULT_VARIANT_VALUE,
-        ukuran: DEFAULT_VARIANT_VALUE,
+        warna: '',
+        ukuran: '',
         harga: hargaDasar,
         stok: 0,
         fotoVarian: '',
@@ -198,6 +246,23 @@ export default function ProductPage() {
     if (!fotoUtama) return alert('Harap upload foto utama produk!');
 
     const normalizedVariants = normalizeVariantsForSave(variants, hargaDasar);
+
+    const filledVariants = variants.filter((variant) => !isVariantCompletelyEmpty(variant));
+
+    if (filledVariants.length > 1) {
+      const invalidIndex = filledVariants.findIndex((variant) => !hasVariantIdentity(variant));
+
+      if (invalidIndex !== -1) {
+        return alert(
+          `Varian ke-${invalidIndex + 1} harus mengisi warna atau ukuran. Tidak boleh hanya mengisi harga, stok, atau jumlah saja.`
+        );
+      }
+
+      const mixedPatternError = getMixedVariantPatternError(filledVariants);
+      if (mixedPatternError) {
+        return alert(mixedPatternError);
+      }
+    }
 
     const payload = {
       kodeUnik: kodeUnik.trim(),
@@ -406,7 +471,7 @@ export default function ProductPage() {
                             placeholder="Misal: Merah"
                             value={v.warna}
                             onChange={(e) => updateVariant(index, 'warna', e.target.value)}
-                            onBlur={(e) => updateVariant(index, 'warna', normalizeVariantField(e.target.value))}
+                            onBlur={(e) => updateVariant(index, 'warna', e.target.value.trim())}
                             className="border-2 p-3 rounded-xl w-full text-sm outline-none focus:border-blue-500"
                           />
                         </div>
@@ -416,7 +481,7 @@ export default function ProductPage() {
                             placeholder="Misal: XL / 42"
                             value={v.ukuran}
                             onChange={(e) => updateVariant(index, 'ukuran', e.target.value)}
-                            onBlur={(e) => updateVariant(index, 'ukuran', normalizeVariantField(e.target.value))}
+                            onBlur={(e) => updateVariant(index, 'ukuran', e.target.value.trim())}
                             className="border-2 p-3 rounded-xl w-full text-sm outline-none focus:border-blue-500"
                           />
                         </div>

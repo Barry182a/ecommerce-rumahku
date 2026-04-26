@@ -1,10 +1,17 @@
 'use client';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { X, Trash2 } from 'lucide-react';
 import { useCart } from '@/src/context/CartContext';
 
+
 const formatSizeLabel = (size?: string) => String(size || '').trim().toUpperCase();
+
+const isRealVariantValue = (value?: string) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized !== '' && normalized !== 'default' && normalized !== '-';
+};
 
 interface CartModalProps {
   isOpen: boolean;
@@ -12,7 +19,7 @@ interface CartModalProps {
 }
 
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
-  const { cartItems, removeFromCart, updateQuantity } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, syncCartStock } = useCart();
   const router = useRouter();
 
   // Pastikan harga dan quantity adalah angka
@@ -21,24 +28,15 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     const quantity = Number(item.quantity) || 0;
     return sum + (harga * quantity);
   }, 0);
-  // Fungsi untuk mengecek stok maksimal
-  const getMaxQuantity = (kodeVarian: string) => {
-    // Untuk sementara kita hardcode stok dari seed (bisa di-improve nanti dengan query database)
-    const stokMap: Record<string, number> = {
-      'KOS001-MERAH-XL': 15,
-      'KOS001-MERAH-L': 8,
-      'KOS001-HITAM-XL': 12,
-      'KOS001-HITAM-L': 10,
-      'KOS001-BIRU-M': 5,
-      'KOS001-BIRU-XL': 7,
-    };
-    return stokMap[kodeVarian] || 999;
-  };
+  const hasOutOfStockItem = cartItems.some((item) => Number(item.stok) <= 0);
 
   const goToPesananAkhir = () => {
     if (cartItems.length === 0) return;
 
-
+    if (hasOutOfStockItem) {
+      alert('Ada produk di keranjang yang stoknya habis. Hapus dulu produk tersebut sebelum melanjutkan.');
+      return;
+    }
 
     onClose();
 
@@ -46,6 +44,11 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
       router.push('/checkout');
     }, 100);
   };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    syncCartStock();
+  }, [isOpen, syncCartStock]);
 
   if (!isOpen) return null;
 
@@ -76,8 +79,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
           ) : (
             // PERUBAHAN DI SINI: [...cartItems].reverse() membalik urutan array
             [...cartItems].reverse().map((item) => {
-              const maxStok = getMaxQuantity(item.kodeVarian);
-              const isOutOfStock = maxStok <= 0;
+              const isOutOfStock = Number(item.stok) <= 0;
 
               return (
                 <div key={item.id} className="flex gap-4 bg-gray-50 p-4 rounded-2xl">
@@ -94,15 +96,19 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                     <p className="font-Inter text-black line-clamp-2">{item.nama}</p>
                     <p className="text-sm text-gray-500 mt-1">
                       {[
-                        item.warna ? item.warna : null,
-                        item.ukuran ? `Ukuran ${formatSizeLabel(item.ukuran)}` : null,
+                        isRealVariantValue(item.warna) ? item.warna : null,
+                        isRealVariantValue(item.ukuran)
+                          ? `Ukuran ${formatSizeLabel(item.ukuran)}`
+                          : null,
                       ]
                         .filter(Boolean)
                         .join(' • ')}
                     </p>
 
                     {isOutOfStock && (
-                      <p className="text-red-600 text-xs font-Inter mt-1">Stok habis</p>
+                      <p className="mt-1 text-xs font-Inter text-red-600">
+                        Stok habis, hapus produk ini untuk melanjutkan pesanan
+                      </p>
                     )}
 
                     {/* Ubah div pembungkus harga dan kontrol menjadi flex-col */}
@@ -128,10 +134,11 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                           <span className="px-4 font-Inter min-w-6 text-center">{item.quantity}</span>
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            // Jika item.stok belum terisi, defaultkan ke quantity saat ini agar tidak error
-                            disabled={item.quantity >= (item.stok || item.quantity)}
+                            disabled={isOutOfStock || item.quantity >= Number(item.stok || item.quantity)}
                             className="w-8 h-8 flex items-center justify-center text-lg font-Inter hover:bg-gray-100 disabled:opacity-40"
-                          > + </button>
+                          >
+                            +
+                          </button>
                         </div>
 
                         {/* Tombol Hapus */}
@@ -171,9 +178,10 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
             <button
               onClick={goToPesananAkhir}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 rounded-2xl text-lg transition-all active:scale-[0.98]"
+              disabled={hasOutOfStockItem}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 rounded-2xl text-lg transition-all active:scale-[0.98] disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
             >
-              Pesan
+              {hasOutOfStockItem ? 'Ada Produk Habis' : 'Pesan'}
             </button>
           </div>
         )}

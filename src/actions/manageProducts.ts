@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 export async function getAllProducts() {
   try {
     return await prisma.product.findMany({
-      include: { 
+      include: {
         varian: true,     // Ambil data varian untuk hitung stok
         category: true    // Ambil data kategori
       },
@@ -27,7 +27,7 @@ export async function deleteProductAdmin(id: string) {
     await prisma.product.delete({
       where: { id }
     });
-    
+
     revalidatePath('/admin/products/list');
     return { success: true };
   } catch (error) {
@@ -60,8 +60,7 @@ function normalizeNullableText(value: unknown) {
 }
 
 function normalizeVariantField(value: unknown) {
-  const cleaned = normalizeText(value);
-  return cleaned === '' ? DEFAULT_VARIANT_VALUE : cleaned;
+  return normalizeText(value);
 }
 
 function normalizeNumber(value: unknown, fallback = 0) {
@@ -103,6 +102,41 @@ function normalizeVariantsForSave(variants: any[], hargaDasar: number) {
 
   return Array.from(deduped.values());
 }
+
+function isRealVariantValue(value: unknown) {
+  const cleaned = normalizeText(value).toLowerCase();
+  return cleaned !== '' && cleaned !== DEFAULT_VARIANT_VALUE.toLowerCase() && cleaned !== '-';
+}
+
+function getVariantPattern(variant: any) {
+  const hasWarna = isRealVariantValue(variant.warna);
+  const hasUkuran = isRealVariantValue(variant.ukuran);
+
+  if (hasWarna && hasUkuran) return 'WARNA_UKURAN';
+  if (hasWarna) return 'WARNA';
+  if (hasUkuran) return 'UKURAN';
+  return 'EMPTY';
+}
+
+function validateVariantPatternConsistency(variants: any[]) {
+  const filledVariants = (variants || []).filter((variant) => !isVariantCompletelyEmpty(variant));
+
+  if (filledVariants.length <= 1) return;
+
+  const patterns = Array.from(
+    new Set(
+      filledVariants
+        .map((variant) => getVariantPattern(variant))
+        .filter((pattern) => pattern !== 'EMPTY')
+    )
+  );
+
+  if (patterns.length > 1) {
+    throw new Error(
+      'Varian produk tidak konsisten. Semua varian dalam satu produk harus memakai pola yang sama.'
+    );
+  }
+}
 // 2. Fungsi untuk menyimpan hasil edit
 export async function updateProductAdmin(id: string, data: any) {
   try {
@@ -112,6 +146,7 @@ export async function updateProductAdmin(id: string, data: any) {
     const fotoUtama = normalizeText(data.fotoUtama);
     const keywords = normalizeNullableText(data.keywords);
     const hargaDasarFix = Math.max(0, Math.round(normalizeNumber(data.hargaDasar, 0)));
+    validateVariantPatternConsistency(data.variants || []);
     const normalizedVariants = normalizeVariantsForSave(data.variants || [], hargaDasarFix);
 
     await prisma.product.update({
