@@ -2,6 +2,7 @@
 
 import { prisma } from '@/src/lib/prisma';
 import { snap } from '@/src/lib/midtrans';
+import { sendPushToAll } from '@/src/lib/webpush';
 
 export async function createMidtransOrder(data: {
   nama: string;
@@ -112,6 +113,12 @@ export async function createMidtransOrder(data: {
       midtransToken: transaction.token,
       midtransRedirectUrl: transaction.redirect_url,
     },
+  });
+
+  await sendPushToAll({
+    title: 'Pesanan baru masuk',
+    body: `${order.namaPembeli} - Bayar Online`,
+    url: '/admin/orders',
   });
 
   return {

@@ -8,6 +8,7 @@ import Header from '@/app/components/Header';
 import ProductCard from '@/app/components/ProductCard';
 import { FaWhatsapp } from 'react-icons/fa';
 import { pageContainer, pagePadding } from '@/src/lib/layout';
+import { useToast } from '@/src/context/ToastContext';
 
 const formatSizeLabel = (size: string) => String(size || '').trim().toUpperCase();
 interface ProductDetailClientProps {
@@ -28,6 +29,7 @@ export default function ProductDetailClient({
 
   const dummyValues = ['Default', '-', '', 'default'];
   const normalizeDisplayVariantValue = (value: unknown) => String(value ?? '').trim();
+  const { showToast } = useToast();
 
   const allColors = useMemo(
     () =>
@@ -110,7 +112,7 @@ export default function ProductDetailClient({
 
   const handleAddToCart = () => {
     if (!isValidSelection || !selectedVariant) {
-      alert('Silakan lengkapi pilihan produk terlebih dahulu');
+      showToast('Lengkapi pilihan produk terlebih dahulu');
       return;
     }
 
@@ -124,7 +126,7 @@ export default function ProductDetailClient({
       stok: selectedVariant.stok,
     });
 
-    alert('Berhasil ditambahkan ke keranjang');
+    showToast('Berhasil ditambah ke keranjang');
   };
 
   return (

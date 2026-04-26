@@ -1,9 +1,10 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { X, Trash2 } from 'lucide-react';
 import { useCart } from '@/src/context/CartContext';
+import { useToast } from '@/src/context/ToastContext';
 
 
 const formatSizeLabel = (size?: string) => String(size || '').trim().toUpperCase();
@@ -20,7 +21,9 @@ interface CartModalProps {
 
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
   const { cartItems, removeFromCart, updateQuantity, syncCartStock } = useCart();
+  const { showToast } = useToast();
   const router = useRouter();
+  const [itemToDelete, setItemToDelete] = useState<any | null>(null);
 
   // Pastikan harga dan quantity adalah angka
   const subtotal = cartItems.reduce((sum, item) => {
@@ -143,15 +146,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
                         {/* Tombol Hapus */}
                         <button
-                          onClick={() => {
-                            const confirmed = window.confirm(
-                              `Hapus "${item.nama}" dari keranjang?`
-                            );
-
-                            if (confirmed) {
-                              removeFromCart(item.id);
-                            }
-                          }}
+                          onClick={() => setItemToDelete(item)}
                           className="text-gray-400 hover:text-red-500 p-2 bg-white rounded-xl border border-gray-100 shadow-sm transition-colors"
                         >
                           <Trash2 size={18} />
@@ -165,6 +160,38 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
             })
           )}
         </div>
+
+        {itemToDelete && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
+              <h3 className="text-lg font-semibold text-black">
+                Produk akan dihapus dari keranjang
+              </h3>
+
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setItemToDelete(null)}
+                  className="rounded-2xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700"
+                >
+                  Batal
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    removeFromCart(itemToDelete.id);
+                    showToast('Produk dihapus dari keranjang');
+                    setItemToDelete(null);
+                  }}
+                  className="rounded-2xl bg-red-600 px-4 py-3 text-sm font-medium text-white"
+                >
+                  Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         {cartItems.length > 0 && (
@@ -187,5 +214,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
         )}
       </div>
     </div>
+
+
   );
 }

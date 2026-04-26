@@ -160,15 +160,6 @@ export default function CheckoutPage() {
         midtransRedirectUrl: transaction.redirectUrl || null,
       });
 
-      saveOrderToBrowser({
-        orderId: transaction.orderId,
-        paymentMethod: 'midtrans',
-        paymentStatus: 'pending',
-        items: checkoutItems,
-        totalAmount: subtotal,
-        midtransRedirectUrl: transaction.redirectUrl || null,
-      });
-
       if (!transaction?.token || !transaction?.orderId) {
         throw new Error('Gagal membuat transaksi Midtrans.');
       }
@@ -192,6 +183,8 @@ export default function CheckoutPage() {
         },
         onClose: function () {
           setIsSubmitting(false);
+          localStorage.removeItem('checkoutCart');
+          router.push('/');
         },
       });
     } catch (err: any) {

@@ -30,29 +30,40 @@ type CustomerOrder = {
 };
 
 function getPaymentStatusText(order: CustomerOrder) {
+    if (order.paymentMethod === 'midtrans') {
+        if (order.paymentStatus === 'expired' || order.paymentStatus === 'failed') {
+            return 'Pembayaran gagal';
+        }
+
+        if (order.isCanceled) return 'Pembayaran batal';
+        if (order.isCompleted) return 'Pembayaran selesai';
+        if (order.paymentStatus === 'paid') return 'Pembayaran berhasil';
+
+        return 'Pembayaran ditunda';
+    }
+
     if (order.isCanceled) return 'Pembayaran batal';
     if (order.isCompleted) return 'Pembayaran selesai';
-
-    if (order.paymentMethod === 'cod') return 'Pembayaran ditunda';
-    if (order.paymentStatus === 'paid') return 'Pembayaran berhasil';
-    if (order.paymentStatus === 'expired') return 'Pembayaran kedaluwarsa';
-    if (order.paymentStatus === 'failed') return 'Pembayaran gagal';
-
     return 'Pembayaran ditunda';
 }
 
 function getPaymentBadgeClass(order: CustomerOrder) {
-    if (order.isCanceled) return 'bg-red-100 text-red-700';
-    if (order.isCompleted) return 'bg-green-100 text-green-700';
+    if (order.paymentMethod === 'midtrans') {
+        if (order.paymentStatus === 'expired' || order.paymentStatus === 'failed') {
+            return 'bg-red-100 text-red-700';
+        }
 
-    if (order.paymentStatus === 'paid') return 'bg-green-100 text-green-700';
-    if (order.paymentStatus === 'expired' || order.paymentStatus === 'failed') {
-        return 'bg-red-100 text-red-700';
+        if (order.isCanceled) return 'bg-red-100 text-red-700';
+        if (order.isCompleted) return 'bg-green-100 text-green-700';
+        if (order.paymentStatus === 'paid') return 'bg-green-100 text-green-700';
+
+        return 'bg-yellow-100 text-yellow-700';
     }
 
+    if (order.isCanceled) return 'bg-red-100 text-red-700';
+    if (order.isCompleted) return 'bg-green-100 text-green-700';
     return 'bg-yellow-100 text-yellow-700';
 }
-
 export default function PesananPage() {
     const [orders, setOrders] = useState<CustomerOrder[]>([]);
     const [loading, setLoading] = useState(true);
@@ -175,7 +186,14 @@ export default function PesananPage() {
                                 </span>
                             </div>
 
-                            {order.isCanceled ? (
+                            {order.paymentMethod === 'midtrans' &&
+                                (order.paymentStatus === 'expired' || order.paymentStatus === 'failed') ? (
+                                <div className="mt-2 p-2">
+                                    <p className="text-lg font-semibold text-red-500">
+                                        Pesanan tidak berhasil
+                                    </p>
+                                </div>
+                            ) : order.isCanceled ? (
                                 <div className="mt-2 p-2">
                                     <p className="mt-1 text-lg text-red-500">
                                         Pesanan Anda dibatalkan oleh penjual.
@@ -183,7 +201,9 @@ export default function PesananPage() {
                                 </div>
                             ) : order.isCompleted ? (
                                 <div className="mt-2 p-2">
-                                    <p className="text-lg font-semibold text-green-500">✅Pesanan selesai</p>
+                                    <p className="text-lg font-semibold text-green-500">
+                                        ✅ Pesanan selesai
+                                    </p>
                                 </div>
                             ) : order.paymentMethod === 'cod' ? (
                                 <div className="mt-2 p-2">
@@ -193,8 +213,8 @@ export default function PesananPage() {
                                 </div>
                             ) : order.paymentStatus === 'paid' ? (
                                 <div className="mt-2 p-2">
-                                    <p className="mt-1 text-sm text-green-500">
-                                        Pembayaran Anda sudah berhasil dan pesanan sedang diproses.
+                                    <p className="mt-1 text-lg text-green-500">
+                                        Penjual akan segera mengirim pesanan Anda.
                                     </p>
                                 </div>
                             ) : null}

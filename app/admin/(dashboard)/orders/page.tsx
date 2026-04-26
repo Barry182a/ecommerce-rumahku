@@ -2,10 +2,55 @@
 import { useState, useEffect } from 'react';
 import { updateOrderStatus } from '@/src/actions/updateOrderStatus';
 
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+
+  return outputArray;
+}
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const setupPushNotification = async () => {
+    if (typeof window === 'undefined') return;
+    if (!('serviceWorker' in navigator)) return;
+    if (!('PushManager' in window)) return;
+    if (!('Notification' in window)) return;
+
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+
+    const registration = await navigator.serviceWorker.register('/sw.js');
+
+    let subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(
+          process.env.NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY!
+        ),
+      });
+    }
+
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(subscription),
+    });
+  };
 
   const fetchOrders = () => {
     fetch('/api/admin/orders')
@@ -13,7 +58,10 @@ export default function OrdersPage() {
       .then(data => setOrders(data));
   };
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => {
+    fetchOrders();
+    setupPushNotification();
+  }, []);
 
   const handleAction = async (status: 'COMPLETED' | 'CANCELLED') => {
     if (!selectedOrder) return;
@@ -47,6 +95,40 @@ export default function OrdersPage() {
     if (order.isCanceled) return 'pesanan batal';
     if (order.isCompleted) return 'pesanan selesai';
     return order.paymentStatus || 'pending';
+  };
+
+  const canCompleteOrder = (order: any) => {
+    if (!order) return false;
+    if (order.isCompleted || order.isCanceled) return false;
+
+    if (order.paymentMethod === 'cod') {
+      return true;
+    }
+
+    return order.paymentStatus === 'paid';
+  };
+
+  const getCompleteBlockedMessage = (order: any) => {
+    if (!order) return '';
+
+    if (order.isCompleted) return 'Pesanan ini sudah selesai.';
+    if (order.isCanceled) return 'Pesanan ini sudah dibatalkan.';
+
+    if (order.paymentMethod !== 'cod') {
+      if (order.paymentStatus === 'pending') {
+        return 'Pesanan online belum bisa diselesaikan karena pembayaran masih ditunda.';
+      }
+
+      if (order.paymentStatus === 'expired') {
+        return 'Pesanan online tidak bisa diselesaikan karena pembayaran sudah kedaluwarsa.';
+      }
+
+      if (order.paymentStatus === 'failed') {
+        return 'Pesanan online tidak bisa diselesaikan karena pembayaran gagal.';
+      }
+    }
+
+    return '';
   };
 
   const getOrderStatusBadge = (order: any) => {
@@ -177,6 +259,12 @@ export default function OrdersPage() {
               </section>
             </div>
 
+            {selectedOrder && !canCompleteOrder(selectedOrder) && !selectedOrder.isCompleted && !selectedOrder.isCanceled && (
+              <div className="mt-4 rounded-2xl bg-yellow-50 px-4 py-3 text-xs font-semibold text-yellow-700">
+                {getCompleteBlockedMessage(selectedOrder)}
+              </div>
+            )}
+
             {/* Tombol Aksi */}
             <div className="mt-6 pt-6 border-t border-gray-100">
               {selectedOrder.isCompleted ? (
@@ -190,9 +278,9 @@ export default function OrdersPage() {
               ) : (
                 <div className="grid grid-cols-2 gap-4">
                   <button
-                    disabled={loading}
+                    disabled={loading || !canCompleteOrder(selectedOrder)}
                     onClick={() => handleAction('COMPLETED')}
-                    className="bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-black shadow-lg shadow-green-100 disabled:opacity-50 transition-all flex items-center justify-center uppercase tracking-widest text-xs"
+                    className="bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-black shadow-lg shadow-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center uppercase tracking-widest text-xs"
                   >
                     {loading ? 'Processing...' : 'Pesanan Selesai'}
                   </button>

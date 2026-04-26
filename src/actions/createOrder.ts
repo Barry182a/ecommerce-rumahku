@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/src/lib/prisma';
+import { sendPushToAll } from '@/src/lib/webpush';
 
 export async function createOrder(data: {
   nama: string;
@@ -58,6 +59,12 @@ export async function createOrder(data: {
       totalAmount: serverTotal,
       items: validatedItems,
     },
+  });
+
+  await sendPushToAll({
+    title: 'Pesanan baru masuk',
+    body: `${order.namaPembeli} - COD`,
+    url: '/admin/orders',
   });
 
   return order;
