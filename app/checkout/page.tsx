@@ -185,7 +185,9 @@ export default function CheckoutPage() {
         onClose: function () {
           setIsSubmitting(false);
           localStorage.removeItem('checkoutCart');
-          router.push('/');
+          clearCart();
+          setCheckoutItems([]);
+          window.location.replace('/');
         },
       });
     } catch (err: any) {
