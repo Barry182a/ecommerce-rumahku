@@ -56,13 +56,16 @@ export default function FooterNav() {
 
     const handleFocus = () => updateOrderCount();
     const handleStorage = () => updateOrderCount();
+    const handleOrdersUpdated = () => updateOrderCount();
 
     window.addEventListener('focus', handleFocus);
     window.addEventListener('storage', handleStorage);
+    window.addEventListener('customer-orders-updated', handleOrdersUpdated);
 
     return () => {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('customer-orders-updated', handleOrdersUpdated);
     };
   }, []);
 

@@ -97,6 +97,7 @@ export default function CheckoutPage() {
 
     const merged = [newOrder, ...existing.filter((o: any) => o.orderId !== payload.orderId)];
     localStorage.setItem('customer_orders', JSON.stringify(merged));
+    window.dispatchEvent(new Event('customer-orders-updated'));
   };
 
   const handleSubmit = async () => {
