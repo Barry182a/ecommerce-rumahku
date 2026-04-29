@@ -176,7 +176,10 @@ export default function CheckoutPage() {
         },
         onPending: function () {
           setIsSubmitting(false);
-          alert('Pembayaran belum selesai. Silakan scan QR atau selesaikan pembayaran Anda.');
+          localStorage.removeItem('checkoutCart');
+          clearCart();
+          setCheckoutItems([]);
+          window.location.replace('/');
         },
         onError: function () {
           setIsSubmitting(false);
