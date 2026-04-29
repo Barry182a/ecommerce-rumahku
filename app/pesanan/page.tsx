@@ -113,6 +113,7 @@ export default function PesananPage() {
             });
 
             localStorage.setItem('customer_orders', JSON.stringify(mergedOrders));
+            window.dispatchEvent(new Event('customer-orders-updated'));
             setOrders(mergedOrders);
         } catch (error) {
             console.error('Gagal sinkron status pesanan:', error);
@@ -268,21 +269,24 @@ export default function PesananPage() {
                                 </div>
                             </div>
 
-                            {order.paymentMethod === 'midtrans' && order.paymentStatus === 'pending' && (
-                                <div className="mt-5">
-                                    <button
-                                        type="button"
-                                        disabled={!order.midtransRedirectUrl}
-                                        onClick={() => {
-                                            if (!order.midtransRedirectUrl) return;
-                                            window.location.href = order.midtransRedirectUrl;
-                                        }}
-                                        className="w-full rounded-2xl bg-red-600 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        Bayar Sekarang
-                                    </button>
-                                </div>
-                            )}
+                            {order.paymentMethod === 'midtrans' &&
+                                order.paymentStatus === 'pending' &&
+                                !order.isCanceled &&
+                                !order.isCompleted && (
+                                    <div className="mt-5">
+                                        <button
+                                            type="button"
+                                            disabled={!order.midtransRedirectUrl}
+                                            onClick={() => {
+                                                if (!order.midtransRedirectUrl) return;
+                                                window.location.href = order.midtransRedirectUrl;
+                                            }}
+                                            className="w-full rounded-2xl bg-red-600 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            Bayar Sekarang
+                                        </button>
+                                    </div>
+                                )}
 
                             {order.paymentMethod === 'midtrans' && order.paymentStatus === 'expired' && (
                                 <div className="mt-5">

@@ -22,33 +22,33 @@ export default function FooterNav() {
   const activeClass = 'text-red-600';
 
   const updateOrderCount = () => {
-  try {
-    const savedOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
+    try {
+      const savedOrders = JSON.parse(localStorage.getItem('customer_orders') || '[]');
 
-    if (!Array.isArray(savedOrders)) {
-      setOrderCount(0);
-      return;
-    }
-
-    const unfinishedOrders = savedOrders.filter((order: any) => {
-      if (order?.isCompleted) return false;
-      if (order?.isCanceled) return false;
-
-      if (
-        order?.paymentMethod === 'midtrans' &&
-        (order?.paymentStatus === 'expired' || order?.paymentStatus === 'failed')
-      ) {
-        return false;
+      if (!Array.isArray(savedOrders)) {
+        setOrderCount(0);
+        return;
       }
 
-      return true;
-    });
+      const activeOrders = savedOrders.filter((order: any) => {
+        if (!order) return false;
 
-    setOrderCount(unfinishedOrders.length);
-  } catch {
-    setOrderCount(0);
-  }
-};
+        if (order.isCompleted) return false;
+        if (order.isCanceled) return false;
+
+        if (order.paymentMethod === 'midtrans') {
+          if (order.paymentStatus === 'expired') return false;
+          if (order.paymentStatus === 'failed') return false;
+        }
+
+        return true;
+      });
+
+      setOrderCount(activeOrders.length);
+    } catch {
+      setOrderCount(0);
+    }
+  };
 
   useEffect(() => {
     setIsMounted(true);
