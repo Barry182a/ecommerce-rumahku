@@ -12,6 +12,8 @@ import { pageContainer, pagePadding } from '@/src/lib/layout';
 
 const formatSizeLabel = (size?: string) => String(size || '').trim().toUpperCase();
 
+
+
 const isRealVariantValue = (value?: string) => {
   const normalized = String(value || '').trim().toLowerCase();
   return normalized !== '' && normalized !== 'default' && normalized !== '-';
@@ -40,6 +42,7 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snapReady, setSnapReady] = useState(false);
   const [isRedirectingToSuccess, setIsRedirectingToSuccess] = useState(false);
+
 
   const [formData, setFormData] = useState({
     nama: '',
@@ -179,6 +182,15 @@ export default function CheckoutPage() {
           localStorage.removeItem('checkoutCart');
           clearCart();
           setCheckoutItems([]);
+
+          sessionStorage.setItem(
+            'global_toast',
+            JSON.stringify({
+              message: 'silahkan lanjutkan pembayaran pesanan anda',
+              type: 'info',
+            })
+          );
+
           window.location.replace('/');
         },
         onError: function () {
@@ -190,6 +202,15 @@ export default function CheckoutPage() {
           localStorage.removeItem('checkoutCart');
           clearCart();
           setCheckoutItems([]);
+
+          sessionStorage.setItem(
+            'global_toast',
+            JSON.stringify({
+              message: 'silahkan lanjutkan pembayaran pesanan anda',
+              type: 'info',
+            })
+          );
+
           window.location.replace('/');
         },
       });

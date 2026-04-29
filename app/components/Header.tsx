@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ShoppingCart, ArrowLeft } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
@@ -8,6 +8,8 @@ import CartModal from './CartModal';
 import SearchBar from './SearchBar';
 import { pageContainer, pagePadding } from '@/src/lib/layout';
 import { useCart } from '@/src/context/CartContext';
+import { useToast } from '@/src/context/ToastContext';
+
 
 type HeaderProps = {
   title?: string;
@@ -27,6 +29,25 @@ export default function Header({
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const { itemCount } = useCart();
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const savedToast = sessionStorage.getItem('global_toast');
+
+    if (!savedToast) return;
+
+    try {
+      const parsed = JSON.parse(savedToast);
+      if (parsed?.message) {
+        showToast(parsed.message, parsed.type || 'info');
+      }
+    } catch (error) {
+      console.error('Gagal membaca global toast:', error);
+    } finally {
+      sessionStorage.removeItem('global_toast');
+    }
+  }, [showToast]);
 
   return (
     <>
