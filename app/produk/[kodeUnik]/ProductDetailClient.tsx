@@ -207,12 +207,6 @@ export default function ProductDetailClient({
                     Rp {currentPrice.toLocaleString('id-ID')}
                   </p>
 
-                  {isVariantChanging && (
-                    <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-red-600">
-                      Memperbarui pilihan...
-                    </p>
-                  )}
-
                   {isProductOutOfStock && (
                     <p className="mt-2 text-sm font-semibold text-red-600">
                       Produk ini sedang habis

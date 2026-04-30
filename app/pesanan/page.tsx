@@ -159,13 +159,6 @@ export default function PesananPage() {
             />
 
             <main className={`${pageContainer} ${pagePadding} space-y-4 pt-5`}>
-                {!loading && isRefreshingStatus && (
-                    <div className="rounded-2xl bg-red-50 px-4 py-3 text-center">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-red-600">
-                            Memeriksa status pesanan...
-                        </p>
-                    </div>
-                )}
                 {loading ? (
                     <div className="space-y-4">
                         {Array.from({ length: 2 }).map((_, i) => (

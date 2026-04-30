@@ -105,14 +105,6 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
           </button>
         </div>
 
-        {isSyncingCart && (
-          <div className="border-b border-gray-100 bg-red-50 px-5 py-2 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-red-600">
-              Memeriksa stok keranjang...
-            </p>
-          </div>
-        )}
-
         {/* Daftar Barang - Bisa Scroll */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
           {cartItems.length === 0 ? (
