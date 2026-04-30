@@ -3,6 +3,7 @@ import Header from './components/Header';
 import HomeClient from './HomeClient';
 import { pageContainer } from '@/src/lib/layout';
 
+export const dynamic = 'force-dynamic';
 export default async function HomePage() {
   try {
     const [banners, categories, products] = await Promise.all([

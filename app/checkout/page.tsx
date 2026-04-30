@@ -42,6 +42,7 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snapReady, setSnapReady] = useState(false);
   const [isRedirectingToSuccess, setIsRedirectingToSuccess] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Memproses pesanan...');
 
 
   const [formData, setFormData] = useState({
@@ -123,6 +124,11 @@ export default function CheckoutPage() {
     }
 
     setIsSubmitting(true);
+    setLoadingMessage(
+      formData.paymentMethod === 'midtrans'
+        ? 'Menyiapkan pembayaran...'
+        : 'Memproses pesanan Anda...'
+    );
 
     try {
       if (formData.paymentMethod === 'cod') {
@@ -142,6 +148,7 @@ export default function CheckoutPage() {
           items: Array.isArray(order.items) ? order.items : checkoutItems,
           totalAmount: order.totalAmount || subtotal,
         });
+        setLoadingMessage('Mengalihkan ke halaman pesanan...');
 
         goToSuccessPage(order.orderId);
         return;
@@ -171,9 +178,11 @@ export default function CheckoutPage() {
       if (!window.snap) {
         throw new Error('Midtrans Snap tidak tersedia di browser.');
       }
+      setLoadingMessage('Membuka halaman pembayaran...');
 
       window.snap.pay(transaction.token, {
         onSuccess: function () {
+          setLoadingMessage('Menyelesaikan pembayaran...');
           clearCart();
           goToSuccessPage(transaction.orderId, '&from=snap_success');
         },
@@ -186,7 +195,7 @@ export default function CheckoutPage() {
           sessionStorage.setItem(
             'global_toast',
             JSON.stringify({
-              message: 'silahkan selesaikan pembayaran anda di halaman pesanan',
+              message: 'Silakan selesaikan pembayaran Anda di halaman Pesanan.',
               type: 'info',
             })
           );
@@ -206,7 +215,7 @@ export default function CheckoutPage() {
           sessionStorage.setItem(
             'global_toast',
             JSON.stringify({
-              message: 'silahkan selesaikan pembayaran anda di halaman pesanan',
+              message: 'Silakan selesaikan pembayaran Anda di halaman Pesanan.',
               type: 'info',
             })
           );
@@ -446,7 +455,11 @@ export default function CheckoutPage() {
               disabled={isSubmitting || (formData.paymentMethod === 'midtrans' && !snapReady)}
               className="w-full rounded-2xl bg-red-600 py-3 font-semibold text-white shadow-md transition-all active:scale-95 disabled:opacity-60"
             >
-              {isSubmitting ? '⏳ Memproses...' : 'Pesan Sekarang'}
+              {isSubmitting
+                ? loadingMessage
+                : formData.paymentMethod === 'midtrans' && !snapReady
+                  ? 'Menyiapkan Pembayaran...'
+                  : 'Pesan Sekarang'}
             </button>
           </div>
         </div>
@@ -455,7 +468,10 @@ export default function CheckoutPage() {
       {isSubmitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="rounded-2xl bg-white p-6 text-center">
-            <p className="text-lg font-semibold">Memproses pesanan...</p>
+            <p className="text-lg font-semibold">{loadingMessage}</p>
+            <p className="mt-2 text-sm text-gray-500">
+              Mohon tunggu sebentar
+            </p>
           </div>
         </div>
       )}

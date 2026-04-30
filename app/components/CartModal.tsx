@@ -33,24 +33,56 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
   }, 0);
   const hasOutOfStockItem = cartItems.some((item) => Number(item.stok) <= 0);
 
+  const handleQuantityChange = (id: string, quantity: number) => {
+    setUpdatingItemId(id);
+
+    window.setTimeout(() => {
+      updateQuantity(id, quantity);
+      setUpdatingItemId((current) => (current === id ? null : current));
+    }, 150);
+  };
+
   const goToPesananAkhir = () => {
     if (cartItems.length === 0) return;
 
     if (hasOutOfStockItem) {
-      alert('Ada produk di keranjang yang stoknya habis. Hapus dulu produk tersebut sebelum melanjutkan.');
+      alert('Ada produk yang habis. Hapus dulu sebelum melanjutkan.');
       return;
     }
 
+    setIsProceedingCheckout(true);
     onClose();
 
     setTimeout(() => {
       router.push('/checkout');
-    }, 100);
+    }, 200);
   };
+  const [isSyncingCart, setIsSyncingCart] = useState(false);
+  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
+  const [isProceedingCheckout, setIsProceedingCheckout] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
-    syncCartStock();
+
+    let cancelled = false;
+
+    const runSync = async () => {
+      setIsSyncingCart(true);
+      try {
+        await syncCartStock();
+      } finally {
+        if (!cancelled) {
+          setIsSyncingCart(false);
+        }
+      }
+    };
+
+    runSync();
+
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen, syncCartStock]);
 
   if (!isOpen) return null;
@@ -72,6 +104,14 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
             <X size={26} />
           </button>
         </div>
+
+        {isSyncingCart && (
+          <div className="border-b border-gray-100 bg-red-50 px-5 py-2 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-red-600">
+              Memeriksa stok keranjang...
+            </p>
+          </div>
+        )}
 
         {/* Daftar Barang - Bisa Scroll */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
@@ -128,16 +168,22 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                         {/* Kontrol Tambah Kurang */}
                         <div className="flex items-center border rounded-xl bg-white shadow-sm">
                           <button
-                            onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                            disabled={item.quantity <= 1}
+                            onClick={() => handleQuantityChange(item.id, Math.max(1, item.quantity - 1))}
+                            disabled={item.quantity <= 1 || updatingItemId === item.id}
                             className="w-8 h-8 flex items-center justify-center text-lg font-Inter hover:bg-gray-100 disabled:opacity-40"
                           >
                             −
                           </button>
-                          <span className="px-4 font-Inter min-w-6 text-center">{item.quantity}</span>
+                          <span className="px-4 font-Inter min-w-10 text-center">
+                            {updatingItemId === item.id ? '...' : item.quantity}
+                          </span>
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            disabled={isOutOfStock || item.quantity >= Number(item.stok || item.quantity)}
+                            onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                            disabled={
+                              isOutOfStock ||
+                              updatingItemId === item.id ||
+                              item.quantity >= Number(item.stok || item.quantity)
+                            }
                             className="w-8 h-8 flex items-center justify-center text-lg font-Inter hover:bg-gray-100 disabled:opacity-40"
                           >
                             +
@@ -172,6 +218,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                 <button
                   type="button"
                   onClick={() => setItemToDelete(null)}
+                  disabled={isDeletingItem}
                   className="rounded-2xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700"
                 >
                   Batal
@@ -179,14 +226,20 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
                 <button
                   type="button"
+                  disabled={isDeletingItem}
                   onClick={() => {
-                    removeFromCart(itemToDelete.id);
-                    showToast('Produk dihapus dari keranjang');
-                    setItemToDelete(null);
+                    setIsDeletingItem(true);
+
+                    window.setTimeout(() => {
+                      removeFromCart(itemToDelete.id);
+                      showToast('Produk dihapus dari keranjang');
+                      setItemToDelete(null);
+                      setIsDeletingItem(false);
+                    }, 180);
                   }}
-                  className="rounded-2xl bg-red-600 px-4 py-3 text-sm font-medium text-white"
+                  className="rounded-2xl bg-red-600 px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Hapus
+                  {isDeletingItem ? 'Menghapus...' : 'Hapus'}
                 </button>
               </div>
             </div>
@@ -205,10 +258,10 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
             <button
               onClick={goToPesananAkhir}
-              disabled={hasOutOfStockItem}
+              disabled={hasOutOfStockItem || isProceedingCheckout}
               className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 rounded-2xl text-lg transition-all active:scale-[0.98] disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
             >
-              {hasOutOfStockItem ? 'Ada Produk Habis' : 'Pesan'}
+              {isProceedingCheckout ? 'Membuka Checkout...' : hasOutOfStockItem ? 'Ada Produk Habis' : 'Pesan'}
             </button>
           </div>
         )}

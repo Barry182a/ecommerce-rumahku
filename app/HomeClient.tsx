@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import ProductCard from './components/ProductCard';
 import FooterNav from './components/FooterNav';
@@ -16,7 +16,6 @@ const CATEGORY_IMAGE_OPTIONS = [
 
 export default function HomeClient({ banners, categories, products }: any) {
   const [selectedCat, setSelectedCat] = useState('all');
-  const [isSearching, setIsSearching] = useState(false);
 
   const renderCategoryImage = (iconName: string | null) => {
     const foundImage = CATEGORY_IMAGE_OPTIONS.find((i) => i.name === iconName);
@@ -35,12 +34,6 @@ export default function HomeClient({ banners, categories, products }: any) {
     selectedCat === 'all'
       ? products
       : products.filter((p: any) => p.categoryId === selectedCat);
-
-  useEffect(() => {
-    setIsSearching(true);
-    const timer = setTimeout(() => setIsSearching(false), 500);
-    return () => clearTimeout(timer);
-  }, [selectedCat]);
 
   return (
     <>
@@ -116,11 +109,13 @@ export default function HomeClient({ banners, categories, products }: any) {
 
       {/* GRID PRODUK */}
       <div className={pagePadding}>
-        {isSearching ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-red-600 border-t-transparent"></div>
-            <p className="text-[10px] uppercase tracking-widest text-red-600">
-              Mencari barang...
+        {filteredProducts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <p className="text-sm font-semibold text-gray-700">
+              Belum ada produk di kategori ini
+            </p>
+            <p className="mt-2 text-[10px] uppercase tracking-widest text-gray-400">
+              Coba pilih kategori lain
             </p>
           </div>
         ) : (

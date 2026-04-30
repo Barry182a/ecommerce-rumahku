@@ -67,11 +67,16 @@ function getPaymentBadgeClass(order: CustomerOrder) {
 export default function PesananPage() {
     const [orders, setOrders] = useState<CustomerOrder[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
+    const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
 
-    const syncOrdersFromServer = async () => {
+    const syncOrdersFromServer = async (isInitial = false) => {
         const savedOrders: CustomerOrder[] = JSON.parse(
             localStorage.getItem('customer_orders') || '[]'
         );
+        if (!isInitial) {
+            setIsRefreshingStatus(true);
+        }
 
         if (savedOrders.length === 0) {
             setOrders([]);
@@ -121,17 +126,18 @@ export default function PesananPage() {
             setOrders(savedOrders);
         } finally {
             setLoading(false);
+            setIsRefreshingStatus(false);
         }
     };
 
     useEffect(() => {
-        syncOrdersFromServer();
+        syncOrdersFromServer(true);
 
         const interval = setInterval(() => {
-            syncOrdersFromServer();
+            syncOrdersFromServer(false);
         }, 15000);
 
-        const onFocus = () => syncOrdersFromServer();
+        const onFocus = () => syncOrdersFromServer(false);
         window.addEventListener('focus', onFocus);
 
         return () => {
@@ -153,9 +159,50 @@ export default function PesananPage() {
             />
 
             <main className={`${pageContainer} ${pagePadding} space-y-4 pt-5`}>
+                {!loading && isRefreshingStatus && (
+                    <div className="rounded-2xl bg-red-50 px-4 py-3 text-center">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-red-600">
+                            Memeriksa status pesanan...
+                        </p>
+                    </div>
+                )}
                 {loading ? (
-                    <div className="rounded-3xl bg-white p-6 shadow-sm">
-                        <p className="text-sm text-gray-500">Memuat pesanan...</p>
+                    <div className="space-y-4">
+                        {Array.from({ length: 2 }).map((_, i) => (
+                            <div key={i} className="rounded-3xl bg-white p-5 shadow-sm sm:p-6">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <div className="h-5 w-32 animate-pulse rounded bg-gray-200" />
+                                        <div className="mt-2 h-3 w-24 animate-pulse rounded bg-gray-200" />
+                                    </div>
+                                    <div className="h-6 w-24 animate-pulse rounded-full bg-gray-200" />
+                                </div>
+
+                                <div className="mt-4 space-y-3">
+                                    {Array.from({ length: 2 }).map((_, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="rounded-2xl border border-gray-100 bg-gray-50 p-3"
+                                        >
+                                            <div className="h-4 w-2/3 animate-pulse rounded bg-gray-200" />
+                                            <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-gray-200" />
+                                            <div className="mt-2 h-4 w-1/3 animate-pulse rounded bg-gray-200" />
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
+                                        <div className="mt-2 h-4 w-28 animate-pulse rounded bg-gray-200" />
+                                    </div>
+                                    <div>
+                                        <div className="h-3 w-16 animate-pulse rounded bg-gray-200" />
+                                        <div className="mt-2 h-5 w-24 animate-pulse rounded bg-gray-200" />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : visibleOrders.length === 0 ? (
                     <div className="rounded-3xl bg-white p-6 shadow-sm">
@@ -277,14 +324,19 @@ export default function PesananPage() {
                                     <div className="mt-5">
                                         <button
                                             type="button"
-                                            disabled={!order.midtransRedirectUrl}
+                                            disabled={!order.midtransRedirectUrl || payingOrderId === order.orderId}
                                             onClick={() => {
                                                 if (!order.midtransRedirectUrl) return;
-                                                window.location.href = order.midtransRedirectUrl;
+
+                                                setPayingOrderId(order.orderId);
+
+                                                window.setTimeout(() => {
+                                                    window.location.href = order.midtransRedirectUrl!;
+                                                }, 150);
                                             }}
                                             className="w-full rounded-2xl bg-red-600 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                                         >
-                                            Bayar Sekarang
+                                            {payingOrderId === order.orderId ? 'Membuka Pembayaran...' : 'Bayar Sekarang'}
                                         </button>
                                     </div>
                                 )}

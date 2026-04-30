@@ -195,6 +195,9 @@ export async function updateProductAdmin(id: string, data: any) {
     }
 
     revalidatePath('/admin/products/list');
+    revalidatePath('/');
+    revalidatePath('/search');
+    revalidatePath('/kategori');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };

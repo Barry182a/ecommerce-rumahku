@@ -110,24 +110,47 @@ export default function ProductDetailClient({
     if (selectedVariant?.fotoVarian) setActiveImage(selectedVariant.fotoVarian);
   }, [selectedVariant]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!isValidSelection || !selectedVariant) {
       showToast('Lengkapi pilihan produk terlebih dahulu');
       return;
     }
 
-    addToCart({
-      kodeVarian: selectedVariant.kodeVarian,
-      nama: product.nama,
-      warna: isColorDummy ? '' : selectedVariant.warna,
-      ukuran: isSizeDummy ? '' : selectedVariant.ukuran,
-      harga: selectedVariant.harga,
-      foto: currentImage,
-      stok: selectedVariant.stok,
-    });
+    setIsAddingToCart(true);
 
-    showToast('Berhasil ditambah ke keranjang');
+    try {
+      addToCart({
+        kodeVarian: selectedVariant.kodeVarian,
+        nama: product.nama,
+        warna: isColorDummy ? '' : selectedVariant.warna,
+        ukuran: isSizeDummy ? '' : selectedVariant.ukuran,
+        harga: selectedVariant.harga,
+        foto: currentImage,
+        stok: selectedVariant.stok,
+      });
+
+      showToast('Berhasil ditambah ke keranjang');
+    } finally {
+      window.setTimeout(() => {
+        setIsAddingToCart(false);
+      }, 250);
+    }
   };
+
+  const [isVariantChanging, setIsVariantChanging] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+
+  useEffect(() => {
+    if (!selectedColor && !selectedSize) return;
+
+    setIsVariantChanging(true);
+
+    const timer = window.setTimeout(() => {
+      setIsVariantChanging(false);
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [selectedColor, selectedSize]);
 
   return (
     <>
@@ -184,6 +207,12 @@ export default function ProductDetailClient({
                     Rp {currentPrice.toLocaleString('id-ID')}
                   </p>
 
+                  {isVariantChanging && (
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-red-600">
+                      Memperbarui pilihan...
+                    </p>
+                  )}
+
                   {isProductOutOfStock && (
                     <p className="mt-2 text-sm font-semibold text-red-600">
                       Produk ini sedang habis
@@ -225,6 +254,11 @@ export default function ProductDetailClient({
                           );
                         })}
                       </div>
+                      {!isSizeDummy && !isColorDummy && !selectedColor && (
+                        <p className="text-xs text-gray-500">
+                          Pilih warna terlebih dahulu untuk melihat ukuran yang tersedia.
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -311,13 +345,21 @@ export default function ProductDetailClient({
 
             <button
               onClick={handleAddToCart}
-              disabled={!isValidSelection || isProductOutOfStock || currentStock <= 0}
-              className={`min-w-[150px] rounded-xl px-4 py-3 text-sm font-medium transition-all sm:min-w-[180px] sm:text-base ${!isValidSelection || isProductOutOfStock || currentStock <= 0
-                ? 'cursor-not-allowed bg-gray-300 text-gray-500'
-                : 'bg-red-600 text-white hover:bg-red-700'
-                }`}
+              disabled={
+                isAddingToCart ||
+                isVariantChanging ||
+                !isValidSelection ||
+                isProductOutOfStock ||
+                currentStock <= 0
+              }
+              className={`min-w-[150px] rounded-xl px-4 py-3 text-sm font-medium transition-all sm:min-w-[180px] sm:text-base 
+                ${isAddingToCart || isVariantChanging || !isValidSelection || isProductOutOfStock || currentStock <= 0
+                  ? 'cursor-not-allowed bg-gray-300 text-gray-500'
+                  : 'bg-red-600 text-white hover:bg-red-700'
+                }
+                `}
             >
-              Masukkan Keranjang
+              {isAddingToCart ? 'Menambahkan...' : 'Masukkan Keranjang'}
             </button>
           </div>
         </div>
