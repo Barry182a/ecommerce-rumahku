@@ -15,8 +15,12 @@ export default function SuccessCartCleaner({
   useEffect(() => {
     if (!shouldClear) return;
 
-    clearCart();
-    localStorage.removeItem('checkoutCart');
+    const timer = window.setTimeout(() => {
+      clearCart();
+      localStorage.removeItem('checkoutCart');
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [shouldClear, clearCart]);
 
   return null;
