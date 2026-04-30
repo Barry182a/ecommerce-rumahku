@@ -88,8 +88,8 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 z-100 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-lg rounded-3xl overflow-hidden max-h-[90vh] flex flex-col shadow-2xl">
+    <div className="fixed inset-0 bg-black/55 z-100 flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-lg rounded-3xl overflow-hidden max-h-[90vh] flex flex-col border border-gray-200 shadow-xl">
 
         {/* Header */}
         <div className="flex items-center justify-between p-2 shadow-sm bg-white sticky top-0 z-10">
@@ -117,7 +117,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
               const isOutOfStock = Number(item.stok) <= 0;
 
               return (
-                <div key={item.id} className="flex gap-4 bg-gray-50 p-4 rounded-2xl">
+                <div key={item.id} className="flex gap-4 rounded-2xl border border-gray-200 bg-white p-4">
                   <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0">
                     <Image
                       src={item.foto}
@@ -185,7 +185,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                         {/* Tombol Hapus */}
                         <button
                           onClick={() => setItemToDelete(item)}
-                          className="text-gray-400 hover:text-red-500 p-2 bg-white rounded-xl border border-gray-100 shadow-sm transition-colors"
+                          className="rounded-xl border border-gray-200 bg-gray-50 p-2 text-gray-500 transition-colors hover:text-red-500"
                         >
                           <Trash2 size={18} />
                         </button>

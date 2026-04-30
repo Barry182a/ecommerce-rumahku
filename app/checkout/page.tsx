@@ -315,7 +315,7 @@ export default function CheckoutPage() {
             }}
             className="space-y-6"
           >
-            <div className="rounded-3xl bg-white p-5 shadow-sm sm:p-6 md:p-7">
+            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6 md:p-7">
               <h2 className="mb-4 text-lg font-semibold">Data Pemesan</h2>
 
               <div className="space-y-4">
@@ -347,7 +347,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl bg-white p-5 shadow-sm sm:p-6 md:p-7">
+            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6 md:p-7">
               <h2 className="mb-4 text-lg font-semibold">Ringkasan Pesanan</h2>
 
               <div className="space-y-4">
@@ -392,7 +392,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl bg-white p-5 shadow-sm sm:p-6 md:p-7">
+            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6 md:p-7">
               <h2 className="mb-4 text-lg font-semibold">Metode Pembayaran</h2>
 
               <div className="space-y-4">
@@ -447,7 +447,7 @@ export default function CheckoutPage() {
           </form>
         </main>
 
-        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-100 bg-white">
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-lg">
           <div className={`${pageContainer} ${pagePadding} py-3`}>
             <button
               type="button"

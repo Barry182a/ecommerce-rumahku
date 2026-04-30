@@ -23,7 +23,7 @@ export default function KategoriClient({ categories }: { categories: any[] }) {
     <div className="min-h-screen bg-gray-50 pb-24">
       <Header title="Kategori" showBack={false} showSearch={false} showWhatsapp={true} showCart={true} />
 
-      <main className={`${pageContainer} bg-white ${pagePadding} pt-6`}>
+      <main className={`${pageContainer} bg-gray-50 ${pagePadding} pt-6`}>
         <div className="grid grid-cols-2 gap-x-4 gap-y-6 pb-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {categories.map((cat) => (
             <Link
@@ -31,8 +31,7 @@ export default function KategoriClient({ categories }: { categories: any[] }) {
               key={cat.id}
               className="group flex flex-col"
             >
-              <div className="relative mb-3 aspect-[4/5] overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 shadow-sm transition-shadow group-hover:shadow-md">
-                <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-gray-100/50 to-transparent"></div>
+              <div className="relative mb-3 aspect-[4/5] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md transition-shadow group-hover:shadow-lg">
 
                 <img
                   src={getImagePath(cat.icon)}

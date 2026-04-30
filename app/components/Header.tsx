@@ -20,7 +20,7 @@ type HeaderProps = {
 };
 
 export default function Header({
-  title = 'Marsi',
+  title = 'Toko Marsi',
   showBack = false,
   showSearch = true,
   showWhatsapp = true,
