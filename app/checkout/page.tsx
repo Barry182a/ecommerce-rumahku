@@ -186,7 +186,7 @@ export default function CheckoutPage() {
           sessionStorage.setItem(
             'global_toast',
             JSON.stringify({
-              message: 'silahkan lanjutkan pembayaran pesanan anda',
+              message: 'silahkan selesaikan pembayaran anda di halaman pesanan',
               type: 'info',
             })
           );
@@ -206,7 +206,7 @@ export default function CheckoutPage() {
           sessionStorage.setItem(
             'global_toast',
             JSON.stringify({
-              message: 'silahkan lanjutkan pembayaran pesanan anda',
+              message: 'silahkan selesaikan pembayaran anda di halaman pesanan',
               type: 'info',
             })
           );

@@ -79,17 +79,7 @@ export default async function SearchPage(props: {
               {displayHint}
             </p>
 
-            <div className="flex flex-wrap justify-center gap-3">
-              {['Sepatu', 'Baju', 'Tas', 'Aksesoris'].map((cat) => (
-                <Link
-                  key={cat}
-                  href={`/search?q=${cat}`}
-                  className="rounded-full border border-gray-100 px-6 py-2 text-[10px] font-black uppercase tracking-wider text-gray-400 shadow-sm transition-all hover:border-red-500 hover:text-red-600"
-                >
-                  {cat}
-                </Link>
-              ))}
-            </div>
+            
           </div>
         ) : (
           <>

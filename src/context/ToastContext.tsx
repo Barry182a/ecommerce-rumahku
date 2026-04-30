@@ -33,7 +33,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
     setTimeout(() => {
       setToast((prev) => ({ ...prev, open: false }));
-    }, 2500);
+    }, 3800);
   }, []);
 
   const handleClose = () => {

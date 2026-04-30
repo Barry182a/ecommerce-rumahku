@@ -112,19 +112,8 @@ export default function PesananPage() {
                 };
             });
 
-            const cleanedOrders = mergedOrders.filter((order: any) => {
-                if (order.isCompleted) return false;
-                if (order.isCanceled) return false;
 
-                if (order.paymentMethod === 'midtrans') {
-                    if (order.paymentStatus === 'expired') return false;
-                    if (order.paymentStatus === 'failed') return false;
-                }
-
-                return true;
-            });
-
-            localStorage.setItem('customer_orders', JSON.stringify(cleanedOrders));
+            localStorage.setItem('customer_orders', JSON.stringify(mergedOrders));
             window.dispatchEvent(new Event('customer-orders-updated'));
             setOrders(mergedOrders);
         } catch (error) {
