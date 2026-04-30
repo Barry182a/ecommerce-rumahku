@@ -123,7 +123,6 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      <SuccessCartCleaner shouldClear={true} />
 
       <Header
         title="Pesanan Berhasil"
