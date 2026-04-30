@@ -2,6 +2,7 @@ import { prisma } from '@/src/lib/prisma';
 import Header from '@/app/components/Header';
 import Link from 'next/link';
 import { pageContainer, pagePadding } from '@/src/lib/layout';
+import SuccessCartCleaner from './SuccessCartCleaner';
 
 interface Props {
   searchParams: Promise<{
@@ -22,6 +23,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
   if (!orderId) {
     return (
       <div className="min-h-screen bg-gray-50 pb-24">
+        <SuccessCartCleaner shouldClear={true} />
         <Header
           title="Status Pesanan"
           showBack={false}
