@@ -23,7 +23,6 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
   if (!orderId) {
     return (
       <div className="min-h-screen bg-gray-50 pb-24">
-        <SuccessCartCleaner shouldClear={true} />
         <Header
           title="Status Pesanan"
           showBack={false}
@@ -36,7 +35,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
           <div className="rounded-3xl bg-white p-6 shadow-sm">
             <h1 className="text-xl font-bold text-black">Pesanan tidak ditemukan</h1>
             <p className="mt-2 text-sm text-gray-600">
-              Data pesanan tidak tersedia.
+              Data pesanan tidak tersedia
             </p>
 
             <Link
@@ -75,7 +74,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
           <div className="rounded-3xl bg-white p-6 shadow-sm">
             <h1 className="text-xl font-bold text-black">Pesanan tidak ditemukan</h1>
             <p className="mt-2 text-sm text-gray-600">
-              Pesanan belum tersedia atau sudah berubah.
+              Pesanan belum tersedia atau sudah berubah
             </p>
 
             <Link
@@ -105,7 +104,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
           <div className="rounded-3xl bg-white p-6 shadow-sm">
             <h1 className="text-xl font-bold text-black">Pembayaran belum berhasil</h1>
             <p className="mt-2 text-sm text-gray-600">
-              Pembayaran Anda belum selesai atau belum terkonfirmasi sistem.
+              Pembayaran Anda belum selesai
             </p>
 
             <Link
@@ -124,6 +123,8 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
+      <SuccessCartCleaner shouldClear={true} />
+
       <Header
         title="Pesanan Berhasil"
         showBack={false}
@@ -133,7 +134,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
       />
 
       <main className={`${pageContainer} ${pagePadding} pt-5`}>
-        <div className="rounded-3xl bg-white p-6 shadow-sm sm:p-8 text-center">
+        <div className="rounded-3xl bg-white p-6 text-center shadow-sm sm:p-8">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl">
             ✅
           </div>
@@ -142,9 +143,9 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
             {successTitle}
           </h1>
 
-          <p className="mt-3 text-sm leading-relaxed text-gray-600 sm:text-base">
-            Informasi pesanan Anda sudah tersimpan. Penjual akan segera menghubungi
-            Anda melalui WhatsApp untuk konfirmasi pesanan.
+          <p className="mt-3 text-lg leading-relaxed text-gray-600 sm:text-base">
+            Penjual akan segera menghubungi
+            Anda melalui WhatsApp untuk konfirmasi pesanan
           </p>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
