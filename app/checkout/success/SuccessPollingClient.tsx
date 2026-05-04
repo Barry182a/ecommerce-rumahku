@@ -1,41 +1,74 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function SuccessPollingClient({ orderId }: { orderId: string }) {
   const router = useRouter();
   const [dots, setDots] = useState('');
+  const [isPending, setIsPending] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 4;
+
+  const checkStatus = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/orders/history?ids=${orderId}`, { cache: 'no-store' });
+      const data = await res.json();
+      
+      if (data[0]?.paymentStatus === 'paid') {
+        router.refresh();
+      } else {
+        if (retryCount >= maxRetries) {
+          setIsPending(false);
+        }
+      }
+    } catch (err) {
+      console.error("Gagal verifikasi:", err);
+    }
+  }, [orderId, router, retryCount]);
 
   useEffect(() => {
-    // Animasi titik-titik sederhana
     const dotInterval = setInterval(() => {
       setDots(prev => (prev.length >= 3 ? '' : prev + '.'));
     }, 500);
 
-    // Fungsi cek status ke API history yang sudah Anda miliki
-    const checkStatus = async () => {
-      try {
-        const res = await fetch(`/api/orders/history?ids=${orderId}`);
-        const data = await res.json();
-        
-        // Jika status sudah berubah jadi 'paid', segarkan halaman[cite: 3, 5]
-        if (data[0]?.paymentStatus === 'paid') {
-          router.refresh(); 
-        }
-      } catch (err) {
-        console.error("Gagal verifikasi:", err);
-      }
-    };
-
-    // Jalankan polling setiap 1.5 detik
-    const pollInterval = setInterval(checkStatus, 1500);
+    const pollInterval = setInterval(() => {
+      setRetryCount(prev => prev + 1);
+      checkStatus();
+    }, 1500);
 
     return () => {
       clearInterval(dotInterval);
       clearInterval(pollInterval);
     };
-  }, [orderId, router]);
+  }, [checkStatus]);
+
+  if (!isPending) {
+    return (
+      <div className="flex flex-col items-center justify-center py-5">
+        <div className="mb-4 text-4xl">⏳</div>
+        <h2 className="text-lg font-bold text-black">Pembayaran Belum Selesai</h2>
+        <p className="mt-2 text-center text-sm text-gray-500">
+          Kami belum menerima konfirmasi pembayaran Anda. Jika Anda sudah membayar, mohon tunggu sebentar atau cek riwayat pesanan.
+        </p>
+        <div className="mt-6 flex flex-col w-full gap-3">
+           <button 
+             onClick={() => { setIsPending(true); setRetryCount(0); }}
+             className="w-full rounded-2xl bg-red-600 py-3 text-sm font-bold text-white"
+           >
+             Cek Ulang Status
+           </button>
+           <Link 
+             href="/pesanan"
+             className="w-full rounded-2xl border border-gray-200 py-3 text-center text-sm font-bold text-gray-600"
+           >
+             Ke Daftar Pesanan
+           </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center py-10">
@@ -43,7 +76,7 @@ export default function SuccessPollingClient({ orderId }: { orderId: string }) {
       <h1 className="mt-5 text-xl font-bold text-black text-center">
         Memverifikasi Pembayaran{dots}
       </h1>
-      <p className="mt-2 text-lg text-gray-600 text-center">
+      <p className="mt-2 text-sm text-gray-600 text-center px-4">
         Mohon jangan tutup halaman ini
       </p>
     </div>
