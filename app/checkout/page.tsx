@@ -115,20 +115,13 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (
-      formData.paymentMethod === 'midtrans' &&
-      (typeof window === 'undefined' || !window.snap)
-    ) {
+    if (formData.paymentMethod === 'midtrans' && (typeof window === 'undefined' || !window.snap)) {
       alert('Midtrans Snap belum siap. Coba reload halaman sebentar lagi.');
       return;
     }
 
     setIsSubmitting(true);
-    setLoadingMessage(
-      formData.paymentMethod === 'midtrans'
-        ? 'Menyiapkan pembayaran...'
-        : 'Memproses pesanan Anda...'
-    );
+    setLoadingMessage(formData.paymentMethod === 'midtrans' ? 'Menyiapkan pembayaran...' : 'Memproses pesanan Anda...');
 
     try {
       if (formData.paymentMethod === 'cod') {
@@ -178,12 +171,20 @@ export default function CheckoutPage() {
       if (!window.snap) {
         throw new Error('Midtrans Snap tidak tersedia di browser.');
       }
+
       setLoadingMessage('Membuka halaman pembayaran...');
+
+      // ============================================================
+      // JARING PENGAMAN AWAL: Agar keranjang pasti update/kosong
+      // ============================================================
+      clearCart();
+      localStorage.removeItem('checkoutCart');
+      setCheckoutItems([]);
+      // ============================================================
 
       window.snap.pay(transaction.token, {
         onSuccess: function () {
           setLoadingMessage('Menyelesaikan pembayaran...');
-          clearCart();
           goToSuccessPage(transaction.orderId, '&from=snap_success');
         },
         onPending: function () {
