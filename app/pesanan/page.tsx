@@ -13,6 +13,22 @@ const isRealVariantValue = (value?: string) => {
     return normalized !== '' && normalized !== 'default' && normalized !== '-';
 };
 
+const formatPaymentName = (type?: string | null) => {
+    if (!type) return 'Bayar Online';
+
+    // Mapping kode midtrans ke nama yang lebih ramah pengguna
+    const names: Record<string, string> = {
+        'bank_transfer': 'Transfer Bank',
+        'gopay': 'GoPay',
+        'shopeepay': 'ShopeePay',
+        'dana': 'Dana',
+        'bca_va': 'Virtual Account BCA',
+        'bni_va': 'Virtual Account BNI',
+    };
+
+    return names[type.toLowerCase()] || type.replace(/_/g, ' ').toUpperCase();
+};
+
 type CustomerOrder = {
     orderId: string;
     paymentMethod: 'cod' | 'midtrans';
@@ -291,10 +307,10 @@ export default function PesananPage() {
                                     <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
                                         Metode Pembayaran
                                     </p>
-                                    <p className="mt-1 text-sm font-Inter text-gray-800">
+                                    <p className="mt-1 text-sm font-semibold text-gray-700">
                                         {order.paymentMethod === 'midtrans'
-                                            ? order.midtransPaymentType || 'Bayar Online'
-                                            : 'COD / Bayar di Tempat'}
+                                            ? formatPaymentName(order.midtransPaymentType)
+                                            : 'COD (Bayar di Tempat)'}
                                     </p>
                                 </div>
 
