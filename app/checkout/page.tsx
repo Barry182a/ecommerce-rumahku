@@ -189,38 +189,32 @@ export default function CheckoutPage() {
         onPending: function () {
           setIsSubmitting(false);
           localStorage.removeItem('checkoutCart');
-          clearCart();
           setCheckoutItems([]);
-
           sessionStorage.setItem(
             'global_toast',
             JSON.stringify({
-              message: 'Silakan selesaikan pembayaran Anda di halaman Pesanan.',
+              message: 'Silahkan selesaikan pembayaran Anda',
               type: 'info',
             })
           );
-
-          window.location.replace('/');
+          goToSuccessPage(transaction.orderId, '&from=snap_pending');
         },
         onError: function () {
           setIsSubmitting(false);
-          alert('Pembayaran gagal atau belum bisa diproses.');
+          alert('Pembayaran gagal');
         },
         onClose: function () {
           setIsSubmitting(false);
           localStorage.removeItem('checkoutCart');
-          clearCart();
           setCheckoutItems([]);
-
           sessionStorage.setItem(
             'global_toast',
             JSON.stringify({
-              message: 'Silakan selesaikan pembayaran Anda di halaman Pesanan.',
+              message: 'Selesaikan pembayaran dihalaman Pesanan.',
               type: 'info',
             })
           );
-
-          window.location.replace('/');
+          goToSuccessPage(transaction.orderId, '&from=snap_closed');
         },
       });
     } catch (err: any) {

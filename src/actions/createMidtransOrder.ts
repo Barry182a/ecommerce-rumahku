@@ -104,6 +104,8 @@ export async function createMidtransOrder(data: {
     ],
     callbacks: {
       finish: `${appUrl}/checkout/success?orderId=${order.orderId}&from=snap_success`,
+      pending: `${appUrl}/checkout/success?orderId=${order.orderId}&from=snap_pending`,
+      error: `${appUrl}/checkout/success?orderId=${order.orderId}&from=snap_error`,
     }
   });
 

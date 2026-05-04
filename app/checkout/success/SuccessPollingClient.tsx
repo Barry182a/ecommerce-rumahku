@@ -43,8 +43,8 @@ export default function SuccessPollingClient({ orderId }: { orderId: string }) {
       <h1 className="mt-5 text-xl font-bold text-black text-center">
         Memverifikasi Pembayaran{dots}
       </h1>
-      <p className="mt-2 text-sm text-gray-600 text-center">
-        Mohon jangan tutup halaman ini, kami sedang mengonfirmasi saldo ShopeePay Anda.
+      <p className="mt-2 text-lg text-gray-600 text-center">
+        Mohon jangan tutup halaman ini
       </p>
     </div>
   );
