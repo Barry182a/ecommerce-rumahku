@@ -50,20 +50,14 @@ export default function SuccessPollingClient({ orderId }: { orderId: string }) {
         <div className="mb-4 text-4xl">⏳</div>
         <h2 className="text-lg font-bold text-black">Pembayaran Belum Selesai</h2>
         <p className="mt-2 text-center text-sm text-gray-500">
-          Kami belum menerima konfirmasi pembayaran Anda. Jika Anda sudah membayar, mohon tunggu sebentar atau cek riwayat pesanan.
+          Mohon selesaikan pembayaran anda. Klik Daftar pesanan
         </p>
         <div className="mt-6 flex flex-col w-full gap-3">
-           <button 
-             onClick={() => { setIsPending(true); setRetryCount(0); }}
-             className="w-full rounded-2xl bg-red-600 py-3 text-sm font-bold text-white"
-           >
-             Cek Ulang Status
-           </button>
            <Link 
              href="/pesanan"
-             className="w-full rounded-2xl border border-gray-200 py-3 text-center text-sm font-bold text-gray-600"
+             className="w-full rounded-2xl border bg-red-600 py-3 text-center text-sm font-bold text-white"
            >
-             Ke Daftar Pesanan
+             Daftar Pesanan
            </Link>
         </div>
       </div>
