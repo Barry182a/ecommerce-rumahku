@@ -3,6 +3,7 @@ import Header from '@/app/components/Header';
 import Link from 'next/link';
 import { pageContainer, pagePadding } from '@/src/lib/layout';
 import SuccessCartCleaner from './SuccessCartCleaner';
+import SuccessPollingClient from './SuccessPollingClient';
 
 interface Props {
   searchParams: Promise<{
@@ -93,8 +94,8 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
     return (
       <div className="min-h-screen bg-gray-50 pb-24">
         <Header
-          title="Status Pembayaran"
-          showBack={true}
+          title="Menunggu Pembayaran"
+          showBack={false}
           showSearch={false}
           showWhatsapp={false}
           showCart={false}
@@ -102,23 +103,25 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
 
         <main className={`${pageContainer} ${pagePadding} pt-5`}>
           <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <h1 className="text-xl font-bold text-black">Pembayaran belum berhasil</h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Pembayaran Anda belum selesai
-            </p>
+            {/* Memanggil komponen polling untuk mengecek status secara berkala */}
+            <SuccessPollingClient orderId={orderId} />
 
-            <Link
-              href="/pesanan"
-              className="mt-5 inline-flex rounded-2xl bg-red-600 px-5 py-3 text-sm font-semibold text-white"
-            >
-              Lihat Pesanan
-            </Link>
+            <div className="mt-6 border-t pt-6 text-center">
+              <p className="text-xs text-gray-400 mb-4">
+                Sudah bayar tapi status tidak berubah?
+              </p>
+              <Link
+                href="/pesanan"
+                className="inline-flex rounded-2xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-600"
+              >
+                Cek Manual di Daftar Pesanan
+              </Link>
+            </div>
           </div>
         </main>
       </div>
     );
   }
-
   const successTitle = getSuccessTitle(order.paymentMethod, order.paymentStatus);
 
   return (
