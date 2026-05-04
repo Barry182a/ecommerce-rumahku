@@ -31,6 +31,14 @@ export default function ProductDetailClient({
   const normalizeDisplayVariantValue = (value: unknown) => String(value ?? '').trim();
   const { showToast } = useToast();
 
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant'
+    });
+  }, []);
+
   const allColors = useMemo(
     () =>
       Array.from(

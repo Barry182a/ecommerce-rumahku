@@ -199,13 +199,13 @@ export default function PesananPage() {
                     </div>
                 ) : visibleOrders.length === 0 ? (
                     <div className="rounded-3xl bg-white p-6 shadow-sm">
-                        <h1 className="text-lg font-bold text-black">Belum ada pesanan</h1>
+                        <h1 className="text-lg font-Inter text-black">Belum ada pesanan</h1>
                         <p className="mt-2 text-sm text-gray-600">
                             Pesanan yang Anda buat akan muncul di sini.
                         </p>
                         <Link
                             href="/"
-                            className="mt-5 inline-flex rounded-2xl bg-red-600 px-5 py-3 text-sm font-semibold text-white"
+                            className="mt-5 inline-flex rounded-2xl bg-red-600 px-5 py-3 text-sm font-Inter text-white"
                         >
                             Belanja Sekarang
                         </Link>
@@ -215,14 +215,14 @@ export default function PesananPage() {
                         <div key={order.orderId} className="rounded-3xl bg-white p-5 shadow-sm sm:p-6">
                             <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div>
-                                    <h2 className="text-lg font-bold text-black">Pesanan Anda</h2>
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        {new Date(order.createdAt).toLocaleString('id-ID')}
+                                    <h2 className="text-base font-bold text-black sm:text-lg">Pesanan Anda</h2>
+                                    <p className="mt-0.5 text-[11px] font-medium text-gray-400 uppercase tracking-tight">
+                                        {new Date(order.createdAt).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
                                     </p>
                                 </div>
 
                                 <span
-                                    className={`rounded-full px-3 py-1 text-[11px] font-bold ${getPaymentBadgeClass(order)}`}
+                                    className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide ${getPaymentBadgeClass(order)}`}
                                 >
                                     {getPaymentStatusText(order)}
                                 </span>
@@ -231,32 +231,32 @@ export default function PesananPage() {
                             {order.paymentMethod === 'midtrans' &&
                                 (order.paymentStatus === 'expired' || order.paymentStatus === 'failed') ? (
                                 <div className="mt-2 p-2">
-                                    <p className="text-lg font-semibold text-red-500">
+                                    <p className="text-lg font-Inter text-red-500">
                                         Pesanan tidak berhasil
                                     </p>
                                 </div>
                             ) : order.isCanceled ? (
                                 <div className="mt-2 p-2">
                                     <p className="mt-1 text-lg text-red-500">
-                                        Pesanan Anda dibatalkan oleh penjual.
+                                        Pesanan Anda dibatalkan oleh penjual
                                     </p>
                                 </div>
                             ) : order.isCompleted ? (
                                 <div className="mt-2 p-2">
-                                    <p className="text-lg font-semibold text-green-500">
+                                    <p className="text-lg font-Inter text-green-500">
                                         ✅ Pesanan selesai
                                     </p>
                                 </div>
                             ) : order.paymentMethod === 'cod' ? (
                                 <div className="mt-2 p-2">
-                                    <p className="text-lg font-semibold text-blue-500">
-                                        Penjual akan segera mengirim pesanan Anda.
+                                    <p className="text-lg font-Inter text-green-500">
+                                        Pesanan Anda dalam proses pengiriman
                                     </p>
                                 </div>
                             ) : order.paymentStatus === 'paid' ? (
                                 <div className="mt-2 p-2">
-                                    <p className="mt-1 text-lg text-green-500">
-                                        Penjual akan segera mengirim pesanan Anda.
+                                    <p className="mt-1 text-lg font-Inter text-green-500">
+                                        Pesanan Anda dalam proses pengiriman
                                     </p>
                                 </div>
                             ) : null}
@@ -267,21 +267,19 @@ export default function PesananPage() {
                                         key={index}
                                         className="rounded-2xl border border-gray-100 bg-gray-50 p-2"
                                     >
-                                        <p className="font-bold text-gray-800">{item.nama}</p>
+                                        <p className="text-sm font-semibold text-gray-900">{item.nama}</p>
 
-                                        <p className="mt-1 text-sm text-gray-500">
+                                        <p className="mt-1 text-xs font-medium text-gray-500">
                                             {[
                                                 isRealVariantValue(item.warna) ? item.warna : null,
-                                                isRealVariantValue(item.ukuran)
-                                                    ? `Ukuran ${formatSizeLabel(item.ukuran)}`
-                                                    : null,
+                                                isRealVariantValue(item.ukuran) ? `Ukuran ${formatSizeLabel(item.ukuran)}` : null,
                                                 `Jumlah ${item.quantity}`,
                                             ]
                                                 .filter(Boolean)
-                                                .join(' • ')}
+                                                .join('  •  ')}
                                         </p>
 
-                                        <p className="mt-1 text-sm font-semibold text-red-600">
+                                        <p className="mt-1 text-sm font-Inter text-red-600">
                                             Rp {(item.harga * item.quantity).toLocaleString('id-ID')}
                                         </p>
                                     </div>
@@ -290,10 +288,10 @@ export default function PesananPage() {
 
                             <div className="mt-5 grid gap-4 sm:grid-cols-2">
                                 <div>
-                                    <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
                                         Metode Pembayaran
                                     </p>
-                                    <p className="mt-1 text-sm font-semibold text-gray-800">
+                                    <p className="mt-1 text-sm font-Inter text-gray-800">
                                         {order.paymentMethod === 'midtrans'
                                             ? order.midtransPaymentType || 'Bayar Online'
                                             : 'COD / Bayar di Tempat'}
@@ -301,10 +299,10 @@ export default function PesananPage() {
                                 </div>
 
                                 <div>
-                                    <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
-                                        Total
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                                        Total Pembayaran
                                     </p>
-                                    <p className="mt-1 text-lg font-bold text-red-600">
+                                    <p className="mt-1 text-lg font-black text-red-600">
                                         Rp {Number(order.totalAmount || 0).toLocaleString('id-ID')}
                                     </p>
                                 </div>
@@ -327,7 +325,7 @@ export default function PesananPage() {
                                                     window.location.href = order.midtransRedirectUrl!;
                                                 }, 150);
                                             }}
-                                            className="w-full rounded-2xl bg-red-600 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                                            className="w-full rounded-2xl bg-red-600 px-5 py-4 text-sm font-bold text-white shadow-lg shadow-red-100 hover:bg-red-700 transition-all disabled:opacity-50"
                                         >
                                             {payingOrderId === order.orderId ? 'Membuka Pembayaran...' : 'Bayar Sekarang'}
                                         </button>
@@ -339,7 +337,7 @@ export default function PesananPage() {
                                     <button
                                         type="button"
                                         disabled
-                                        className="w-full cursor-not-allowed rounded-2xl bg-gray-300 px-5 py-3 text-sm font-semibold text-gray-600"
+                                        className="w-full cursor-not-allowed rounded-2xl bg-gray-300 px-5 py-3 text-sm font-Inter text-gray-600"
                                     >
                                         Pembayaran Kedaluwarsa
                                     </button>
