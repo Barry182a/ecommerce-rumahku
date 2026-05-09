@@ -20,6 +20,8 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const setupPushNotification = async () => {
     if (typeof window === 'undefined') return;
@@ -67,16 +69,27 @@ export default function OrdersPage() {
     if (!selectedOrder) return;
     setLoading(true);
 
-    const res = await updateOrderStatus(selectedOrder.id, status);
+    try {
+      const res = await updateOrderStatus(selectedOrder.id, status);
 
-    if (res.success) {
-      alert(`Pesanan berhasil di-${status === 'COMPLETED' ? 'Selesaikan' : 'Batalkan'}`);
+      // TypeScript sekarang yakin 'res' punya properti 'success'
+      if (res.success) {
+        // Pastikan state setSuccessMessage sudah kamu buat di atas
+        // Jika belum, hapus baris ini agar tidak error
+        setSuccessMessage?.(res.message);
+
+        alert(`Pesanan berhasil di-${status === 'COMPLETED' ? 'Selesaikan' : 'Batalkan'}`);
+        setSelectedOrder(null);
+        fetchOrders();
+      } else {
+        alert(res.message || 'Gagal memperbarui pesanan');
+      }
+    } catch (err) {
+      alert('Terjadi kesalahan koneksi');
+    } finally {
+      setLoading(false); // PERBAIKAN: Ubah ke false agar tombol bisa diklik lagi
       setSelectedOrder(null);
-      fetchOrders(); // Refresh data
-    } else {
-      alert(`Gagal: ${res.message}`);
     }
-    setLoading(false);
   };
   const getPaymentBadge = (status: string) => {
     switch (status) {
@@ -135,6 +148,34 @@ export default function OrdersPage() {
     if (order.isCanceled) return 'bg-red-100 text-red-700';
     if (order.isCompleted) return 'bg-green-100 text-green-700';
     return getPaymentBadge(order.paymentStatus);
+  };
+  const getSpecificMethodName = (order: any) => {
+    // Jika COD, langsung kembalikan teks COD
+    if (order.paymentMethod === 'cod') return 'Cash on Delivery (COD)';
+
+    // Ambil data payment type (pastikan menggunakan midtransPaymentType sesuai page.tsx)
+    const type = order.midtransPaymentType;
+
+    if (!type) return 'Pembayaran Online';
+
+    const names: Record<string, string> = {
+      'bank_transfer': 'Transfer Bank',
+      'gopay': 'GoPay',
+      'shopeepay': 'ShopeePay',
+      'dana': 'Dana',
+      'bca_va': 'Virtual Account BCA',
+      'bni_va': 'Virtual Account BNI',
+      'bri_va': 'Virtual Account BRI',
+      'permata_va': 'Virtual Account Permata',
+      'echannel': 'Mandiri Bill',
+      'cstore': 'Gerai Retail (Indomaret/Alfamart)',
+    };
+
+    return names[type.toLowerCase()] || type.replace(/_/g, ' ').toUpperCase();
+  };
+  const isRealVariantValue = (value?: string) => {
+    const normalized = String(value || '').trim().toLowerCase();
+    return normalized !== '' && normalized !== 'default' && normalized !== '-' && normalized !== 'null';
   };
 
   return (
@@ -195,67 +236,126 @@ export default function OrdersPage() {
             {/* Konten Scrollable */}
             <div className="overflow-y-auto pr-2 space-y-6 flex-1 scrollbar-hide">
 
-              {/* 1. Nama Pembeli */}
-              <section>
-                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">Nama Pembeli</label>
-                <p className="font-bold text-gray-800 text-lg uppercase">{selectedOrder.namaPembeli}</p>
+              {/* 1, 2, 3. Data Pembeli (Dibungkus Kotak) */}
+              <section className="bg-gray-50 p-5 rounded-[2rem] border border-gray-100 space-y-4">
+                <label className="text-[10px] font-black uppercase text-blue-500 tracking-widest block border-b border-blue-100 pb-2 mb-2">
+                  Data Pembeli
+                </label>
+                <div>
+                  <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest block mb-0.5">Nama</label>
+                  <p className="font-bold text-gray-800 text-lg uppercase">{selectedOrder.namaPembeli}</p>
+                </div>
+
+                <div>
+                  <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest block mb-0.5">No. WhatsApp</label>
+                  <div className="flex items-center gap-3">
+                    <p className="font-bold text-blue-600 text-lg">{selectedOrder.noHp}</p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedOrder.noHp);
+                        setCopiedId(selectedOrder.id);
+                        setTimeout(() => setCopiedId(null), 2000);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border-2 shadow-sm ${copiedId === selectedOrder.id
+                        ? 'bg-green-500 border-green-500 text-white'
+                        : 'bg-white border-gray-100 text-gray-400 hover:border-blue-200 hover:text-blue-500'
+                        }`}
+                    >
+                      {copiedId === selectedOrder.id ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest block mb-0.5">Alamat Pengiriman</label>
+                  <p className="text-sm text-gray-700 leading-relaxed font-medium">{selectedOrder.alamat}</p>
+                </div>
               </section>
 
-              {/* 2. No HP */}
+              {/* 4. Daftar Barang (Data Barang Dibungkus Kotak Per Item) */}
               <section>
-                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">No. WhatsApp</label>
-                <p className="font-bold text-blue-600">{selectedOrder.noHp}</p>
-              </section>
-
-              {/* 3. Alamat */}
-              <section>
-                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">Alamat Pengiriman</label>
-                <p className="text-sm text-gray-700 leading-relaxed font-medium bg-gray-50 p-3 rounded-xl border border-gray-100">
-                  {selectedOrder.alamat}
-                </p>
-              </section>
-
-              {/* 4. Daftar Barang & 5. Kode Unik */}
-              <section>
-                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-3">Daftar Barang yang Dipesan</label>
-                <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-3 ml-2">
+                  Daftar Barang yang Dipesan
+                </label>
+                <div className="space-y-4">
                   {Array.isArray(selectedOrder.items) && selectedOrder.items.map((item: any, i: number) => (
-                    <div key={i} className="bg-white p-4 rounded-2xl border-2 border-gray-100 shadow-sm">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1">
-                          <p className="font-black text-gray-800 uppercase leading-tight">{item.nama}</p>
-                          <p className="text-[10px] font-bold text-gray-400 mt-1">{item.warna} | {item.ukuran}</p>
-                        </div>
-                        <div className="bg-blue-600 text-white px-3 py-1 rounded-full font-black text-xs ml-2">
-                          x{item.quantity}
-                        </div>
+                    <div key={i} className="bg-white p-6 rounded-[2rem] border-2 border-gray-100 shadow-sm">
+                      {/* Nama Produk (QTY dihapus sesuai instruksi) */}
+                      <div className="mb-4">
+                        <p className="font-black text-gray-800 uppercase leading-tight text-xl">
+                          {item.nama}
+                        </p>
                       </div>
-                      {/* Kode Unik Barang (SKU) */}
-                      <div className="mt-3 pt-3 border-t border-dashed border-gray-200 flex items-center gap-2 text-[10px]">
-                        <span className="font-black text-gray-400 uppercase tracking-widest">KODE UNIK:</span>
-                        <code className="bg-gray-100 px-2 py-0.5 rounded font-mono font-bold text-gray-600">
-                          {item.kodeVarian}
-                        </code>
+
+                      {/* Kode Unik & Varian */}
+                      <div className="space-y-5">
+                        <div>
+                          <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">
+                            KODE UNIK PRODUK
+                          </label>
+                          <div className="text-4xl font-mono font-black text-blue-600 tracking-tighter leading-none">
+                            {(() => {
+                              const suffix = `-${String(item.warna).toUpperCase()}-${String(item.ukuran).toUpperCase()}`;
+                              return item.kodeVarian.replace(suffix, "");
+                            })()}
+                          </div>
+                        </div>
+
+                        {/* Bagian Varian Dipilih */}
+                        {(isRealVariantValue(item.warna) || isRealVariantValue(item.ukuran)) && (
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-black uppercase text-gray-400 tracking-widest block">
+                              VARIAN DIPILIH
+                            </label>
+                            <div className="flex gap-4">
+                              {/* Tampilkan Warna hanya jika nilainya valid (bukan '-', 'default', atau kosong) */}
+                              {isRealVariantValue(item.warna) && (
+                                <span className="text-lg font-black text-gray-700 uppercase">
+                                  Warna: {item.warna}
+                                </span>
+                              )}
+
+                              {/* Tampilkan Ukuran hanya jika nilainya valid */}
+                              {isRealVariantValue(item.ukuran) && (
+                                <span className="text-lg font-black text-gray-700 uppercase">
+                                  Ukuran: {item.ukuran}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <div>
+                          <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-1">
+                            JUMLAH PESANAN
+                          </label>
+                          <div className="text-lg font-black text-gray-700">
+                            {item.quantity}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               </section>
 
-              {/* 6. Total Harga */}
-              <section className="bg-blue-50 p-5 rounded-3xl border-2 border-blue-100">
-                <label className="text-[10px] font-black uppercase text-blue-400 tracking-widest block mb-1">Total Harga</label>
-                <p className="text-3xl font-black text-blue-700">
+              {/* 5. Total Harga (Tanpa Kotak) */}
+              <section className="px-2 py-2">
+                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">Total Harga</label>
+                <p className="text-4xl font-black text-red-600">
                   Rp {selectedOrder.totalAmount.toLocaleString('id-ID')}
                 </p>
               </section>
 
-              {/* 7. Metode Pembayaran */}
-              <section className="pb-4">
-                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">Metode Pembayaran</label>
-                <span className="inline-block bg-gray-800 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                  {selectedOrder.paymentMethod}
-                </span>
+              {/* 6. Metode Pembayaran */}
+              <section className="px-2 pb-4">
+                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest block mb-1">
+                  Metode Pembayaran
+                </label>
+                <div className="flex flex-col">
+                  <span className="text-sm font-black text-gray-800 uppercase tracking-widest">
+                    {getSpecificMethodName(selectedOrder)}
+                  </span>
+                </div>
               </section>
             </div>
 

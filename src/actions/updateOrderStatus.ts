@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 
 export async function updateOrderStatus(orderId: string, status: 'COMPLETED' | 'CANCELLED') {
   try {
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id: orderId },
       });
@@ -18,7 +18,6 @@ export async function updateOrderStatus(orderId: string, status: 'COMPLETED' | '
       if (status === 'COMPLETED') {
         if (order.paymentMethod === 'cod') {
           const items = order.items as any[];
-
           for (const item of items) {
             const variant = await tx.productVariant.findUnique({
               where: { kodeVarian: item.kodeVarian },
@@ -37,24 +36,15 @@ export async function updateOrderStatus(orderId: string, status: 'COMPLETED' | '
 
           await tx.order.update({
             where: { id: orderId },
-            data: {
-              isCompleted: true,
-              paymentStatus: 'paid',
-              paidAt: new Date(),
-            },
+            data: { isCompleted: true, paymentStatus: 'paid', paidAt: new Date() },
           });
         } else {
           if (order.paymentStatus !== 'paid') {
-            throw new Error(
-              'Pesanan online hanya bisa diselesaikan jika pembayaran sudah berhasil.'
-            );
+            throw new Error('Pesanan online belum dibayar.');
           }
-
           await tx.order.update({
             where: { id: orderId },
-            data: {
-              isCompleted: true,
-            },
+            data: { isCompleted: true },
           });
         }
       } else if (status === 'CANCELLED') {
@@ -68,12 +58,21 @@ export async function updateOrderStatus(orderId: string, status: 'COMPLETED' | '
         });
       }
 
-      revalidatePath('/admin/orders');
-      revalidatePath('/pesanan');
-
       return { success: true, message: 'Status pesanan berhasil diperbarui' };
+    }, {
+      maxWait: 10000,
+      timeout: 20000
     });
+
+    // Panggil revalidate di luar transaksi agar tidak membebani DB
+    revalidatePath('/admin/orders');
+    revalidatePath('/pesanan');
+
+    // LANGSUNG RETURN result: Ini menjamin res di frontend tidak undefined
+    return result;
+
   } catch (error: any) {
-    return { success: false, message: error.message };
+    console.error("Error update status:", error.message);
+    return { success: false, message: error.message || 'Terjadi kesalahan sistem' };
   }
 }

@@ -433,7 +433,7 @@ export default function CheckoutPage() {
                   <div>
                     <p className="font-medium">Bayar Online</p>
                     <p className="text-xs text-gray-500">
-                      Midtrans (QRIS, VA, E-Wallet, dll)
+                      Bank, ShopeePay, Gopay, Dana
                     </p>
                   </div>
                 </label>

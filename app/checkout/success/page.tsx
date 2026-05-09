@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { pageContainer, pagePadding } from '@/src/lib/layout';
 import SuccessCartCleaner from './SuccessCartCleaner';
 import SuccessPollingClient from './SuccessPollingClient';
+import SuccessOrderSync from './SuccessOrderSync';
 
 interface Props {
   searchParams: Promise<{
@@ -21,6 +22,7 @@ function getSuccessTitle(paymentMethod: string, paymentStatus: string) {
 export default async function CheckoutSuccessPage({ searchParams }: Props) {
   const { orderId } = await searchParams;
 
+  // Jika orderId tidak ada, kita tidak bisa melakukan sinkronisasi karena data 'order' belum ada
   if (!orderId) {
     return (
       <div className="min-h-screen bg-gray-50 pb-24">
@@ -51,12 +53,14 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
     );
   }
 
+  // Data diambil dari database di sini
   const order = await prisma.order.findUnique({
     where: { orderId },
     select: {
       orderId: true,
       paymentMethod: true,
       paymentStatus: true,
+      totalAmount: true,
     },
   });
 
@@ -93,6 +97,12 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
   if (order.paymentMethod === 'midtrans' && order.paymentStatus !== 'paid') {
     return (
       <div className="min-h-screen bg-gray-50 pb-24">
+        {/* Sinkronisasi dipasang di sini karena variabel 'order' sudah tersedia */}
+        <SuccessOrderSync
+          orderId={order.orderId}
+          paymentMethod={order.paymentMethod}
+          totalAmount={Number(order.totalAmount)}
+        />
         <Header
           title="Menunggu Pembayaran"
           showBack={false}
@@ -103,7 +113,6 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
 
         <main className={`${pageContainer} ${pagePadding} pt-5`}>
           <div className="rounded-3xl bg-white p-6 shadow-sm">
-            {/* Memanggil komponen polling untuk mengecek status secara berkala */}
             <SuccessPollingClient orderId={orderId} />
 
             <div className="mt-6 border-t pt-6 text-center">
@@ -122,11 +131,18 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
       </div>
     );
   }
+
   const successTitle = getSuccessTitle(order.paymentMethod, order.paymentStatus);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       <SuccessCartCleaner shouldClear={true} />
+      {/* Sinkronisasi dipasang di sini karena variabel 'order' sudah tersedia */}
+      <SuccessOrderSync
+        orderId={order.orderId}
+        paymentMethod={order.paymentMethod}
+        totalAmount={Number(order.totalAmount)}
+      />
       <Header
         title="Pesanan Berhasil"
         showBack={false}
